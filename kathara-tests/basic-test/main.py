@@ -1,54 +1,37 @@
 import subprocess
 import sys
-from utils.experiment_helpers import iperf3_server, iperf3_client, pathneck, parse_pathneck_result
+from utils.experiment_helpers import setup_device, iperf3_server, iperf3_client, pathneck, parse_pathneck_result
 from Kathara.model.Lab import Lab
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Machine import Machine
 import docker
+import time
 
-try:
-    lab = Lab("basic-test")
-    
-    pc1 = lab.new_machine("pc1", **{"image": "katharatestimage"})
+def main():
+    try:
+        lab = Lab("basic-test")
+        pc1 = setup_device(lab, "pc1", "katharatestimage", ["A"], ["ip address add 100.0.0.2/24 dev eth0", "ip route add default via 100.0.0.1 dev eth0",])
+        pc2 = setup_device(lab, "pc2", "katharatestimage", ["B"], ["ip address add 200.0.0.2/24 dev eth0", "ip route add default via 200.0.0.1 dev eth0",])
+        r1 = setup_device(lab, "r1", "katharatestimage", ["A", "B"], ["ip address add 100.0.0.1/24 dev eth0", "ip address add 200.0.0.1/24 dev eth1", "tc qdisc add dev eth0 root netem delay 10ms",])
 
-    pc2 = lab.new_machine("pc2", **{"image": "katharatestimage"})
+        Kathara.get_instance().deploy_lab(lab)
 
-    # Create router1 with image "kathara/frr"
-    # router1 = lab.new_machine("router1", **{"image": "katharatestimage"})
+        print("executing commands")
 
-    # ip_port = [{"ip" : "100.0.0.2", "port": "7575"}, {"ip" : "200.0.0.2", "port": "7576"}]
+        stdout = iperf3_server(lab, pc1, 7575)
+        std_pc2_c = iperf3_client(lab, pc2, "100.0.0.2", 7575)
 
-    # lab.connect_machine_to_link(pc1.name, "A")
-    # lab.connect_machine_to_link(pc2.name, "A")
 
-    Kathara.get_instance().deploy_lab(lab)
+        print("execution complete")
+        print(list(x for x in stdout))
+        print(list(x for x in std_pc2_c))
+        print(next(Kathara.get_instance().get_machines_stats(lab_name=lab.name)))
 
-    pc1_server = "iperf3 -s -p 7575 &"
-    pc2_server = "iperf3 -s -p 7576 &"
-    pc1_c = "iPerf3 -c 200.0.0.2 -p 7576"
-    pc2_c = "iPerf3 -c 100.0.0.2 -p 7575"
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+    except Exception as e:
+        print(e)
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+    except KeyboardInterrupt:
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
-    print("executing commands")
-
-    [stdout_pc1_s, stderr_pc1_s] = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc1.name, command=pc1_server)
-    # [stdout_pc2_s, stderr_pc2_s] = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc2.name, command=pc2_server, wait=True)
-    # [stdout_pc1_c, stderr_pc1_c] = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc1.name,  command=pc1_c, wait=True)
-    # [stdout_pc2_c, stderr_pc2_c] = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc2.name,  command=pc2_c, Wait=True)
-
-    print("execution complete")
-    print(stderr_pc1_s)
-    print(stderr_pc1_s)
-    # print(stdout_pc2_s)
-    # print(stderr_pc2_s)
-    # print(stderr_pc1_c)
-    # print(stderr_pc1_c)
-    # print(stdout_pc2_c)
-    # print(stderr_pc2_c)
-    print(next(Kathara.get_instance().get_machines_stats(lab_name=lab.name)))
-
-    # pc1.api_object.undeploy(lab.hash, {pc1.name, pc2.name})
-
-    Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-except KeyboardInterrupt:
-    Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-
+main()

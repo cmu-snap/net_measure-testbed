@@ -23,8 +23,7 @@ def main():
 
         print("execution complete")
         print(list(x for x in std_pc2_c_out))
-        print(parse_iperf3_bandwidth(std_pc2_c_out), "Mbps |", "Retcode", retcode)
-        print(list(x for x in std_pc2_c))
+        print("Bandwidth", parse_iperf3_bandwidth(std_pc2_c_out), "Mbps,", "Retcode", retcode)
         print(next(Kathara.get_instance().get_machines_stats(lab_name=lab.name)))
 
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)

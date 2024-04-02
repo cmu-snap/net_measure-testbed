@@ -108,9 +108,11 @@ def parse_iperf3_bandwidth(stdout):
 
     bandwith, unit = None, None
 
-    for i, token in enumerate(reversed(output_tokens)):
+    reversed_tokens = list(reversed(output_tokens))
+
+    for i, token in enumerate(reversed_tokens):
         if token.endswith("/sec"):
-            bandwith, unit = float(output_tokens[i+1]), token
+            bandwidth, unit = float(reversed_tokens[i+1]), token
             break
 
     if 'Kbits' in unit:
@@ -119,7 +121,6 @@ def parse_iperf3_bandwidth(stdout):
         bandwidth *= 1000
     
     return bandwidth
-
 
 
 def pathneck(client_name, server_ip):

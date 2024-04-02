@@ -97,7 +97,23 @@ def iperf3_client(lab, pc, server_ip, port):
 	:return: A generator of tuples containing the stdout and stderr in bytes 
 	"""
 	command = f"iperf3 -c {server_ip} -p {port}"
-	return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc.name, command=command, stream=True, wait=True)
+	return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc.name, command=command, stream=False, wait=True)
+
+def parse_iperf3_bandwidth(stdout):
+	"""
+	Returns bandwidth in Mbits/sec
+	"""
+	output_string = stdout.decode('utf-8')
+	unit = output.split(' ')[-1]
+	bandwidth = float(output.split(' ')[-2])
+	if 'Kbits' in unit:
+		bandwidth /= 1000
+	elif 'Gbits' in unit:
+		bandwidth *= 1000
+	
+	return bandwidth
+
+
 
 def pathneck(client_name, server_ip):
 	"""

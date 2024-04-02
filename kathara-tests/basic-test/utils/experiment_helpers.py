@@ -21,24 +21,6 @@ def capture_traffic(node_name, interface, duration, filename):
 	except subprocess.CalledProcessError as e:
 		print(f"Command {e.cmd} returned non-zero exit status: {e.returncode}")
 
-def setup_device(lab, device_name, image, links, config):
-	"""
-	Creates a new Kathara machine with the startup commands given in config
-	:param lab (Kathara.model.Lab): Kathara lab scenario
-	:param device_name (string): Name of new device
-	:param image (string): Name of image to start device with
-	:param links (list[string]): Links to connect device to
-	:param config (list[string]): startup commands for device
-	:rtype: Kathara.model.Machine
-	:return: Kathara machine object
-	"""
-	device = lab.new_machine(device_name, **{"image": image})
-	for l in links:
-		lab.connect_machine_to_link(device.name, l)
-
-	lab.create_file_from_list(config, f"{device.name}.startup")
-	return device
-
 def iperf3_server(lab, pc, port):
 	""" 
 	Starts an iperf3 server on specific device pc as Daemon

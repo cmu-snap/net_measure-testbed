@@ -54,24 +54,40 @@ def build_image(img_name, img_path):
     print(cmd)
     os.system(cmd)
 
+def setup_device(lab, device_name, image, links, config):
+    """
+    Creates a new Kathara machine with the startup commands given in config
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :param device_name (string): Name of new device
+    :param image (string): Name of image to start device with
+    :param links (list[string]): Links to connect device to
+    :param config (list[string]): startup commands for device
+    :rtype: Kathara.model.Machine
+    :return: Kathara machine object
+    """
+    device = lab.new_machine(device_name, **{"image": image})
+    for l in links:
+        lab.connect_machine_to_link(device.name, l)
 
+    lab.create_file_from_list(config, f"{device.name}.startup")
+    return device
 
 def create_device(lab, device_name, image, link, ip):
     """
-    Create and start container
+    Create and start device
+    :param lab (Kathara.model.Lab): Kathara lab scenario
     :param device_name: name of device
     :param ip: container ip address
     :param img_name: name of image
-    :param network: network name on eth0 interface
-    :param ip: ip address of node on <network>
+    :param link: link name on eth0 interface
+    :param ip: ip address of node on link
     :return: None
     """
-    cmd = f"docker run -d --name {container_name}" \
-          f" --network {network}" \
-          f" --ip {ip}" \
-          f" --privileged {img_name}"
-    print(cmd)
-    os.system(cmd)
+    print(f'Setting up device {device_name} with arguments ({image}, {link}, {ip})')
+    cmd = [f'ip address add {ip}/24 dev eth0', f'ip route add default via {ip} dev eth0',]
+    links = [link]
+    device = setup_device(lab, device_name, image, links, cmd)
+    print(f'Succesfully added device {device_name}')
 
 
 def create_subnet(ip_range, subnet_name):
@@ -97,51 +113,78 @@ def remove_subnet(subnet_name):
     os.system(cmd)
 
 
-def attach(lab, ip, subnet_name, machine_name, interface, tc_params):
+def attach(lab, ip, link_name, device_name, interface, tc_params):
     """
     Attach container to subnet
-    :param subnet_name: name of subnet
-    :param container_name: name of container
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :param ip (string): 
+    :param link_name: name of link/collision domain
+    :param device_name: name of device
     :param tc_params: tuple (bandwidth, burst, latency)
     :return: None
     """
     if interface == "eth0":
-        configure_link(lab, machine_name, interface, tc_params)
+        configure_link(lab, device_name, interface, tc_params)
     else:
-        cmd = f"docker network connect --ip {ip} {subnet_name} {container_name}"
+        print(interface)
+        cmd = f"/sbin/ifconfig {interface} {ip} up"
+        (stdout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
+
+        cmd = f"ip address add {ip}/24 dev {interface}"
         print(cmd)
-        os.system(cmd)
-        configure_link(container_name, interface, tc_params)
+        (stdout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
+        print(stdout, stderr, cmdValue)
+        configure_link(lab, device_name, interface, tc_params)
 
 
-def detach(subnet_name, container_name):
+def remove_link(lab, link):
     """
-    Detach container from a subnet
-    :param subnet_name: name of subnet
-    :param container_name: name of container
+    Remove link from lab
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :param link: name of link (i.e. Kathara collision domain)
     :return: None
     """
-    cmd = f"docker network disconnect {subnet_name} {container_name}"
-    print(cmd)
-    os.system(cmd)
+    link = lab.get_link(link)
+    Kathara.get_instance().undeploy_link(link)
 
-
-def add_route(container_name, ip_range, gateway_ip, interface):
+def remove_device(lab, device_name):
     """
-    Add routing rule for packets from a container to a subnet
-    :param container_name: name of src container
+    Remove device from lab
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+
+    :param device_name: name of device
+    :return: None
+    """
+    device = lab.get_machine(device_name)
+    
+    Kathara.get_instance().undeploy_machine(device)
+
+
+def add_route(lab, device_name, ip_range, gateway_ip, interface):
+    """
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    Add routing rule for packets from a device to a subnet
+    :param device_name: name of src device
     :param ip_range: destination subnet
     :param gateway_ip: ip of next hop gateway
     :param interface: interface through which packets will be sent
     :return: None
     """
-    cmd = f"docker exec {container_name} ip route add {ip_range}" \
+    cmd = f"ip route add {ip_range}" \
           f" via {gateway_ip} dev {interface}"
-    cmdValue = os.system(cmd)
+    (stout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
+    print(stout)
+    print(stderr)
+    print(cmdValue)
     if cmdValue != 0:
-        cmd = f"docker exec {container_name} ip route change {ip_range}" \
+        cmd = f"ip route change {ip_range}" \
               f" via {gateway_ip} dev {interface}"
-        os.system(cmd)
+
+        (stout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
+        print(stout)
+        print(stderr)
+        print(cmdValue)
+
 
 
 def del_route(lab, machine_name, ip_range):
@@ -153,7 +196,7 @@ def del_route(lab, machine_name, ip_range):
     :return: None
     """
     cmd = f"ip route delete {ip_range}"
-    Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=machine_name, command=cmd, stream=True, wait=True)
+    (stdout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=machine_name, command=cmd, stream=False, wait=True)
     
 
 
@@ -217,29 +260,29 @@ def configure_link(lab, node, interface, tc_params):
     :param tc_params: tuple (bandwidth, burst, latency)
     :return: None
     """
+    print(f'Configuring node {node} with arguments ({interface}, {tc_params[0]}, {tc_params[1]}, {tc_params[2]})')
+
     bandwidth, burst, latency = tc_params
     cmd_bandwidth = f"tc qdisc add dev {interface} " \
                     f"root handle 1: tbf rate {bandwidth}mbit burst {burst}kb latency 10ms"
     cmd_latency = f"tc qdisc add dev {interface} " \
                   f"parent 1:1 handle 10: netem delay {latency}ms"
-    try:
-        cmd_value_bandwidth = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_bandwidth, stream=True, wait=True)
-        cmd_value_latency = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=True, wait=True)
-    except Exception as e:
-        print(e)
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-    except KeyboardInterrupt:
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
+    (stdout1, stderr1, cmd_value_bandwidth) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_bandwidth, stream=False, wait=True)
+    (stdout2, stderr2, cmd_value_latency) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
+
+    print(stdout1, stderr1, cmd_value_bandwidth)
+    print(stdout2, stderr2, cmd_value_latency) 
     # Error handling for cmd_bandwidth and cmd_latency
-    # if cmd_value_bandwidth != 0 or cmd_value_latency != 0:
-    # 	clear_child = f"docker exec {node} tc qdisc del dev {interface} parent 1:1 handle 10"
-    # 	clear_cmd = f"docker exec {node} tc qdisc del dev {interface} root"
-    # 	os.system(clear_child)
-    # 	os.system(clear_cmd)
-    # 	os.system(cmd_bandwidth)
-    # 	os.system(cmd_latency)
-
+    if cmd_value_bandwidth != 0 or cmd_value_latency != 0:
+        clear_child = f"tc qdisc del dev {interface} parent 1:1 handle 10"
+        clear_cmd = f"tc qdisc del dev {interface} root"
+        Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=clear_child, stream=False, wait=True)
+        Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=clear_cmd, stream=False, wait=True)
+        
+        Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_bandwidth, stream=False, wait=True)
+        Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
+    print(f'Completed configuring node {node}')
 
 def main(args):
     """
@@ -247,143 +290,150 @@ def main(args):
     :param args: parameters describing network topology
     :return: None
     """
-    lab = Lab("basic-test")
-    if args.add_link is not None:
-        print(f'Adding link: {args.add_link}')
-        # Handling add_link functionality
-        current_state = read_state_json()
-        node_vs_eth = current_state["node_vs_eth"]
-        link_info = ast.literal_eval(args.add_link)
-        link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
-        current_state["links"][link_name] = link_param
-        links = current_state["links"]
-        nodes = current_state["nodes"]
-        create_subnet(link_param[0], link_name)
-        endpoints = link_param[1]
-        tc_params = link_param[2]
-        attach(endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
-        attach(endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
-    elif args.remove_link:
-        print(f'Removing link: {args.remove_link}')
-        # Handling remove_link functionality
-        current_state = read_state_json()
-        node_vs_eth_not_used = {}
-        link_info = ast.literal_eval(args.remove_link)
-        link_name, node_vs_eth_not_used, link_param = generate_link_param(node_vs_eth_not_used, link_info)
-        node_vs_eth = current_state["node_vs_eth"]
-        endpoints = link_param[1]
-        if link_name in current_state["links"]:
-            start_node = endpoints[0][0]
-            dest_node = endpoints[1][0]
-            # deleting direct connections due to this link in routing tables
-            for dest_node_ip in current_state["node_vs_ip"][dest_node]:
-                del_route(start_node, dest_node_ip)
-            # because bidirectional
-            for start_node_ip in current_state["node_vs_ip"][start_node]:
-                del_route(dest_node, start_node_ip)
-            # deleting from links data structure
-            del current_state["links"][link_name]
+    try:
+        lab = Lab("basic-test")
+        # if args.add_link is not None:
+        #     print(f'Adding link: {args.add_link}')
+        #     # Handling add_link functionality
+        #     current_state = read_state_json()
+        #     node_vs_eth = current_state["node_vs_eth"]
+        #     link_info = ast.literal_eval(args.add_link)
+        #     link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
+        #     current_state["links"][link_name] = link_param
+        #     links = current_state["links"]
+        #     nodes = current_state["nodes"]
+        #     create_subnet(link_param[0], link_name)
+        #     endpoints = link_param[1]
+        #     tc_params = link_param[2]
+        #     attach(endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
+        #     attach(endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
+        # elif args.remove_link:
+        #     print(f'Removing link: {args.remove_link}')
+        #     # Handling remove_link functionality
+        #     current_state = read_state_json()
+        #     node_vs_eth_not_used = {}
+        #     link_info = ast.literal_eval(args.remove_link)
+        #     link_name, node_vs_eth_not_used, link_param = generate_link_param(node_vs_eth_not_used, link_info)
+        #     node_vs_eth = current_state["node_vs_eth"]
+        #     endpoints = link_param[1]
+        #     if link_name in current_state["links"]:
+        #         start_node = endpoints[0][0]
+        #         dest_node = endpoints[1][0]
+        #         # deleting direct connections due to this link in routing tables
+        #         for dest_node_ip in current_state["node_vs_ip"][dest_node]:
+        #             del_route(start_node, dest_node_ip)
+        #         # because bidirectional
+        #         for start_node_ip in current_state["node_vs_ip"][start_node]:
+        #             del_route(dest_node, start_node_ip)
+        #         # deleting from links data structure
+        #         del current_state["links"][link_name]
+        #     else:
+        #         print("Link being deleted not present.")
+        #         exit()
+        #     links = current_state["links"]
+        #     nodes = current_state["nodes"]
+        #     detach(link_name, endpoints[0][0])
+        #     detach(link_name, endpoints[1][0])
+        #     remove_subnet(link_name)  # remove subnet after detaching containers or containers will get killed.
+        # Reading and storing information from the config.py file
+        if args.config is not None:
+            config = importlib.import_module(args.config)
+            node_vs_ip = {}
+            node_vs_eth = {}
+            for node_name, node_param in config.nodes.items():
+                if node_name not in node_vs_ip:
+                    node_vs_ip[node_name] = []
+                node_vs_ip[node_name].append(node_param[0])
+            # update links to include interface and link_name
+            links = {}
+            for link_info in config.links:
+                link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
+                links[link_name] = link_param
+            nodes = config.nodes
+            print(nodes)
+            # print(links)
+            # build image for node
+            # build_image("katharatestimage", ".")
+
+            # create devices
+            for node_name, node_param in nodes.items():
+                create_device(lab, node_name, "katharatestimage", node_param[1], node_param[0])
+            Kathara.get_instance().deploy_lab(lab)
+            # # create subnets
+            # for link_name, link_param in links.items():
+            # 	create_subnet(link_param[0], link_name)
+
+            # attach containers to networks
+            for link_name, link_param in links.items():
+                endpoints = link_param[1]
+                tc_params = link_param[2]
+                try:
+                    attach(lab, endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
+                    attach(lab, endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
+                except Exception as e:
+                    print(e)
         else:
-            print("Link being deleted not present.")
-            exit()
-        links = current_state["links"]
-        nodes = current_state["nodes"]
-        detach(link_name, endpoints[0][0])
-        detach(link_name, endpoints[1][0])
-        remove_subnet(link_name)  # remove subnet after detaching containers or containers will get killed.
-    # Reading and storing information from the config.py file
-    elif args.config is not None:
-        config = importlib.import_module(args.config)
-        node_vs_ip = {}
-        node_vs_eth = {}
-        for node_name, node_param in config.nodes.items():
-            if node_name not in node_vs_ip:
-                node_vs_ip[node_name] = []
-            node_vs_ip[node_name].append(node_param[0])
-        # update links to include interface and link_name
-        links = {}
-        for link_info in config.links:
-            link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
-            links[link_name] = link_param
-        nodes = config.nodes
-        # print(nodes)
-        print(links)
-        # build image for node
-        # build_image("node-image", "..")
+            print("Invalid Argument")
 
-        # # create subnets
-        # for link_name, link_param in links.items():
-        # 	create_subnet(link_param[0], link_name)
 
-        # create devices
-        # for node_name, node_param in nodes.items():
-        # 	create_device(node_name, "node-image", node_param[1], node_param[0])
 
-        # # attach containers to networks
+        # # Using Dijkstra to configure routing tables with add route function above
+        # graph = {}
+        # connections = {}
+        # # Create Graph
         # for link_name, link_param in links.items():
         # 	endpoints = link_param[1]
         # 	tc_params = link_param[2]
-        # 	try:
-        # 		attach(endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
-        # 		attach(endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
-        # 	except Exception as e:
-        # 		print(e)
-    else:
-        print("Invalid Argument")
 
+        # 	if endpoints[0][0] not in node_vs_ip:
+        # 		node_vs_ip[endpoints[0][0]] = []
+        # 	node_vs_ip[endpoints[0][0]].append(endpoints[0][1])
+        # 	if endpoints[1][0] not in node_vs_ip:
+        # 		node_vs_ip[endpoints[1][0]] = []
+        # 	node_vs_ip[endpoints[1][0]].append(endpoints[1][1])
 
+        # 	if endpoints[0][0] not in graph:
+        # 		graph[endpoints[0][0]] = []
+        # 		connections[endpoints[0][0]] = {}
+        # 	graph[endpoints[0][0]].append((endpoints[1][0], tc_params))
+        # 	connections[endpoints[0][0]][endpoints[1][0]] = (
+        # 		endpoints[1][1], endpoints[0][2])  # ip of other node,eth of itself
+        # 	if endpoints[1][0] not in graph:
+        # 		graph[endpoints[1][0]] = []
+        # 		connections[endpoints[1][0]] = {}
+        # 	graph[endpoints[1][0]].append((endpoints[0][0], tc_params))
+        # 	connections[endpoints[1][0]][endpoints[0][0]] = (endpoints[0][1], endpoints[1][2])
 
-    # # Using Dijkstra to configure routing tables with add route function above
-    # graph = {}
-    # connections = {}
-    # # Create Graph
-    # for link_name, link_param in links.items():
-    # 	endpoints = link_param[1]
-    # 	tc_params = link_param[2]
+        # for start_node in graph:
+        # 	dist = dijkstra(graph, start_node)
+        # 	hops = []
+        # 	for node in graph:
+        # 		if node == start_node:
+        # 			continue
+        # 		prev_node = dist[node][1]
+        # 		next_hop = node
+        # 		while prev_node != start_node and dist[prev_node][0] != float('inf'):
+        # 			next_hop = prev_node
+        # 			prev_node = dist[prev_node][1]
+        # 		if dist[prev_node][0] == float('inf'):
+        # 			continue
+        # 		hops.append((node, next_hop))
+        # 	print(f"\nStart Node = {start_node}")
+        # 	for dest_node, next_hop_node in hops:
+        # 		next_hop_node_ip = connections[start_node][next_hop_node][0]
+        # 		interface = connections[start_node][next_hop_node][1]
+        # 		for dest_node_ip in node_vs_ip[dest_node]:
+        # 			add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
+        # 		print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
 
-    # 	if endpoints[0][0] not in node_vs_ip:
-    # 		node_vs_ip[endpoints[0][0]] = []
-    # 	node_vs_ip[endpoints[0][0]].append(endpoints[0][1])
-    # 	if endpoints[1][0] not in node_vs_ip:
-    # 		node_vs_ip[endpoints[1][0]] = []
-    # 	node_vs_ip[endpoints[1][0]].append(endpoints[1][1])
-
-    # 	if endpoints[0][0] not in graph:
-    # 		graph[endpoints[0][0]] = []
-    # 		connections[endpoints[0][0]] = {}
-    # 	graph[endpoints[0][0]].append((endpoints[1][0], tc_params))
-    # 	connections[endpoints[0][0]][endpoints[1][0]] = (
-    # 		endpoints[1][1], endpoints[0][2])  # ip of other node,eth of itself
-    # 	if endpoints[1][0] not in graph:
-    # 		graph[endpoints[1][0]] = []
-    # 		connections[endpoints[1][0]] = {}
-    # 	graph[endpoints[1][0]].append((endpoints[0][0], tc_params))
-    # 	connections[endpoints[1][0]][endpoints[0][0]] = (endpoints[0][1], endpoints[1][2])
-
-    # for start_node in graph:
-    # 	dist = dijkstra(graph, start_node)
-    # 	hops = []
-    # 	for node in graph:
-    # 		if node == start_node:
-    # 			continue
-    # 		prev_node = dist[node][1]
-    # 		next_hop = node
-    # 		while prev_node != start_node and dist[prev_node][0] != float('inf'):
-    # 			next_hop = prev_node
-    # 			prev_node = dist[prev_node][1]
-    # 		if dist[prev_node][0] == float('inf'):
-    # 			continue
-    # 		hops.append((node, next_hop))
-    # 	print(f"\nStart Node = {start_node}")
-    # 	for dest_node, next_hop_node in hops:
-    # 		next_hop_node_ip = connections[start_node][next_hop_node][0]
-    # 		interface = connections[start_node][next_hop_node][1]
-    # 		for dest_node_ip in node_vs_ip[dest_node]:
-    # 			add_route(start_node, dest_node_ip, next_hop_node_ip, interface)
-    # 		print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
-
-    # # Store the current state to state.json file
-    # write_state_json(nodes, links, node_vs_ip, node_vs_eth)
+        # # # Store the current state to state.json file
+        # write_state_json(nodes, links, node_vs_ip, node_vs_eth)
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+    except Exception as e:
+        print(e)
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+    except KeyboardInterrupt:
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
 
 if __name__ == "__main__":

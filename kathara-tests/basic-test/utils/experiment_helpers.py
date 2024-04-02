@@ -104,8 +104,8 @@ def parse_iperf3_bandwidth(stdout):
 	Returns bandwidth in Mbits/sec
 	"""
 	output_string = stdout.decode('utf-8')
-	unit = output.split(' ')[-1]
-	bandwidth = float(output.split(' ')[-2])
+	unit = output_string.split(' ')[-1]
+	bandwidth = float(output_string.split(' ')[-2])
 	if 'Kbits' in unit:
 		bandwidth /= 1000
 	elif 'Gbits' in unit:

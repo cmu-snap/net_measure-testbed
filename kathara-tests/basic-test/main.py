@@ -19,11 +19,11 @@ def main():
         print("executing commands")
 
         stdout = iperf3_server(lab, pc1, 7575)
-        std_pc2_c_out, _ = iperf3_client(lab, pc2, "100.0.0.2", 7575)
+        std_pc2_c_out, _, retcode = iperf3_client(lab, pc2, "100.0.0.2", 7575)
 
         print("execution complete")
         print(list(x for x in stdout))
-        print(parse_iperf3_bandwidth(stdout), "Mbps")
+        print(parse_iperf3_bandwidth(stdout), "Mbps |", "Retcode", retcode)
         print(list(x for x in std_pc2_c))
         print(next(Kathara.get_instance().get_machines_stats(lab_name=lab.name)))
 

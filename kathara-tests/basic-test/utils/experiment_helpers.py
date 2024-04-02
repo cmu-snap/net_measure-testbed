@@ -2,43 +2,9 @@
 Helper functions and utilities useful when setting up an experiment
 """
 import subprocess
-from queue import PriorityQueue
 from Kathara.model.Lab import Lab
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Machine import Machine
-
-def dijkstra(graph, start):
-	"""
-	Function to compute the shortest path from a source node to all other nodes in the graph
-	param: graph: the graph of the network
-	param: start: the source/start node from where minimum distance to other nodes is calculated.
-	return: Distance dictionary, where each element is a tuple of distance from source node and 
-	the previous node in the shortest path from the source.
-	"""
-	# Initialize the distance dictionary and set the distance of the start node to 0
-	dist = {}
-	for node in graph:
-		dist[node] = [float('inf'), node]
-	dist[start][0] = 0
-
-	# Initialize the priority queue and add the start node with distance 0
-	pq = PriorityQueue()
-	pq.put((0, start))
-
-	# Traverse the graph using BFS and update the distance for each neighbor node
-	while not pq.empty():
-		current_dist, current_node = pq.get()
-		if current_dist > dist[current_node][0]:
-			continue
-		for neighbor, weight in graph[current_node]:
-			# weights are bandwidth values
-			distance = current_dist + 1. / weight[0]
-			if distance < dist[neighbor][0]:
-				dist[neighbor] = [distance, current_node]
-				pq.put([distance, neighbor])
-
-	# Return the distance dictionary
-	return dist
 
 def capture_traffic(node_name, interface, duration, filename):
 	"""

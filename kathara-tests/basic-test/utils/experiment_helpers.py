@@ -108,7 +108,7 @@ def parse_iperf3_bandwidth(stdout):
 
 	bandwith, unit = None, None
 
-	for i, token in enumerate(reverse(output_tokens)):
+	for i, token in enumerate(reversed(output_tokens)):
 		if token.endswith("/sec"):
 			bandwith, unit = float(output_tokens[i+1]), token
 			break

@@ -38,6 +38,10 @@ def dijkstra(graph, start):
             if distance < dist[neighbor][0]:
                 dist[neighbor] = [distance, current_node]
                 pq.put([distance, neighbor])
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
     # Return the distance dictionary
     return dist
 
@@ -239,6 +243,7 @@ def configure_link(lab, node, interface, tc_params):
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
     print(f'Completed configuring node {node}')
 
+<<<<<<< HEAD
 def setup_topology():
     """
     Sets up configured topology as described by args parameters
@@ -258,6 +263,15 @@ def setup_topology():
                                 '(see examples folder for examples)')
         args = parser.parse_args()
 
+=======
+def main(args):
+    """
+    Sets up configured topology as described by args parameters
+    :param args: parameters describing network topology
+    :return: None
+    """
+    try:
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
         lab = Lab("basic-test")
         # if args.add_link is not None:
         #     print(f'Adding link: {args.add_link}')
@@ -354,6 +368,11 @@ def setup_topology():
         else:
             print("Invalid Argument")
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
         # Using Dijkstra to configure routing tables with add route function above
         graph = {}
         connections = {}
@@ -400,16 +419,42 @@ def setup_topology():
                 next_hop_node_ip = connections[start_node][next_hop_node][0]
                 interface = connections[start_node][next_hop_node][1]
                 for dest_node_ip in node_vs_ip[dest_node]:
+<<<<<<< HEAD
+=======
+                    print(dest_node_ip)
+                    print(next_hop_node_ip)
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
                     add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
                 print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
 
         # Store the current state to state.json file
         write_state_json(nodes, links, node_vs_ip, node_vs_eth)
+<<<<<<< HEAD
         return (lab, links, nodes)
         # Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+=======
+        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
     except Exception as e:
         print(e)
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
     except KeyboardInterrupt:
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
+<<<<<<< HEAD
+=======
+
+if __name__ == "__main__":
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-al', '--add-link', type=str, required=False, default=None,
+                        help='link info of link to add')
+    parser.add_argument('-rl', '--remove-link', type=str, required=False,
+                        default=None, help='link info of link to remove')
+    parser.add_argument('-c', '--config', type=str, required=False, default='topology_config',
+                        help='config file describing topology to set up '
+                             '(see examples folder for examples)')
+    args = parser.parse_args()
+    # print(args)
+    main(args)
+>>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7

@@ -38,3 +38,4 @@ def main():
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
 main()
+

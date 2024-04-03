@@ -1,3 +1,5 @@
+# Note: 
+The Kathara framework migration is currently located in the directory kathara-tests/basic-test. Running the function setup_topology() in setup.py reads the topology specified in topology_config.py and builds it.
 # Docker Telemetry Testbed
 This project provides a framework to set up arbitrary network topologies of
 Docker containers and run user defined experiments for data collection on these networks.

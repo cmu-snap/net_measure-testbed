@@ -38,10 +38,6 @@ def dijkstra(graph, start):
             if distance < dist[neighbor][0]:
                 dist[neighbor] = [distance, current_node]
                 pq.put([distance, neighbor])
-<<<<<<< HEAD
-=======
-
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
     # Return the distance dictionary
     return dist
 
@@ -243,35 +239,24 @@ def configure_link(lab, node, interface, tc_params):
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
     print(f'Completed configuring node {node}')
 
-<<<<<<< HEAD
 def setup_topology():
     """
-    Sets up configured topology as described by args parameters
-    :param args: parameters describing network topology
+    Sets up configured topology as described in topology_config
     :
     :return: 
     """
     try:
-        # parse arguments
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-al', '--add-link', type=str, required=False, default=None,
-                            help='link info of link to add')
-        parser.add_argument('-rl', '--remove-link', type=str, required=False,
-                            default=None, help='link info of link to remove')
-        parser.add_argument('-c', '--config', type=str, required=False, default='topology_config',
-                            help='config file describing topology to set up '
-                                '(see examples folder for examples)')
-        args = parser.parse_args()
+        # # parse arguments
+        # parser = argparse.ArgumentParser()
+        # parser.add_argument('-al', '--add-link', type=str, required=False, default=None,
+        #                     help='link info of link to add')
+        # parser.add_argument('-rl', '--remove-link', type=str, required=False,
+        #                     default=None, help='link info of link to remove')
+        # parser.add_argument('-c', '--config', type=str, required=False, default='topology_config',
+        #                     help='config file describing topology to set up '
+        #                         '(see examples folder for examples)')
+        # args = parser.parse_args()
 
-=======
-def main(args):
-    """
-    Sets up configured topology as described by args parameters
-    :param args: parameters describing network topology
-    :return: None
-    """
-    try:
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
         lab = Lab("basic-test")
         # if args.add_link is not None:
         #     print(f'Adding link: {args.add_link}')
@@ -317,62 +302,57 @@ def main(args):
         #     detach(link_name, endpoints[1][0])
         #     remove_subnet(link_name)  # remove subnet after detaching containers or containers will get killed.
         # Reading and storing information from the config.py file
-        if args.config is not None:
-            config = importlib.import_module(args.config)
-            start_up_cmds = defaultdict(list)
-            start_up_links = defaultdict(list)
-            node_vs_ip = {}
-            node_vs_eth = {}
-            for node_name, node_param in config.nodes.items():
-                if node_name not in node_vs_ip:
-                    node_vs_ip[node_name] = []
-                node_vs_ip[node_name].append(node_param[0])
-            # update links to include interface and link_name
-            links = {}
-            for link_info in config.links:
-                link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
-    
-                source, dest = link_param[1][0][0], link_param[1][1][0]
+        # if args.config is not None:
+        config = importlib.import_module(args.config)
+        start_up_cmds = defaultdict(list)
+        start_up_links = defaultdict(list)
+        node_vs_ip = {}
+        node_vs_eth = {}
+        for node_name, node_param in config.nodes.items():
+            if node_name not in node_vs_ip:
+                node_vs_ip[node_name] = []
+            node_vs_ip[node_name].append(node_param[0])
+        # update links to include interface and link_name
+        links = {}
+        for link_info in config.links:
+            link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
 
-                # set ip addresses for interfaces
-                cmd_source = f'ip address add {link_param[1][0][1]}/24 dev {link_param[1][0][2]}'
-                cmd_dest = f'ip address add {link_param[1][1][1]}/24 dev {link_param[1][1][2]}'
-                start_up_cmds[source].append(cmd_source)
-                start_up_cmds[dest].append(cmd_dest)
+            source, dest = link_param[1][0][0], link_param[1][1][0]
 
-                # add collision domains
-                start_up_links[source].append(link_name)
-                start_up_links[dest].append(link_name)
-                links[link_name] = link_param
+            # set ip addresses for interfaces
+            cmd_source = f'ip address add {link_param[1][0][1]}/24 dev {link_param[1][0][2]}'
+            cmd_dest = f'ip address add {link_param[1][1][1]}/24 dev {link_param[1][1][2]}'
+            start_up_cmds[source].append(cmd_source)
+            start_up_cmds[dest].append(cmd_dest)
 
-            nodes = config.nodes
+            # add collision domains
+            start_up_links[source].append(link_name)
+            start_up_links[dest].append(link_name)
+            links[link_name] = link_param
 
-            # uncomment to rebuild
-            # build_image("katharatestimage", ".")
+        nodes = config.nodes
 
-            # create devices
-            for node_name, node_param in nodes.items():
-                create_device(lab, node_name, "katharatestimage", start_up_links[node_name], start_up_cmds[node_name])
- 
-            Kathara.get_instance().deploy_lab(lab)
+        # uncomment to rebuild
+        # build_image("katharatestimage", ".")
 
-            # attach devices to collision domains
-            for link_name, link_param in links.items():
-                endpoints = link_param[1]
-                tc_params = link_param[2]
-                try:
-                    attach(lab, endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
-                    attach(lab, endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
-                except Exception as e:
-                    print(e)
-        else:
-            print("Invalid Argument")
+        # create devices
+        for node_name, node_param in nodes.items():
+            create_device(lab, node_name, "katharatestimage", start_up_links[node_name], start_up_cmds[node_name])
 
-<<<<<<< HEAD
-=======
+        Kathara.get_instance().deploy_lab(lab)
 
+        # attach devices to collision domains
+        for link_name, link_param in links.items():
+            endpoints = link_param[1]
+            tc_params = link_param[2]
+            try:
+                attach(lab, endpoints[0][1], link_name, endpoints[0][0], endpoints[0][2], tc_params)
+                attach(lab, endpoints[1][1], link_name, endpoints[1][0], endpoints[1][2], tc_params)
+            except Exception as e:
+                print(e)
+        # else:
+        #     print("Invalid Argument")
 
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
         # Using Dijkstra to configure routing tables with add route function above
         graph = {}
         connections = {}
@@ -419,42 +399,16 @@ def main(args):
                 next_hop_node_ip = connections[start_node][next_hop_node][0]
                 interface = connections[start_node][next_hop_node][1]
                 for dest_node_ip in node_vs_ip[dest_node]:
-<<<<<<< HEAD
-=======
-                    print(dest_node_ip)
-                    print(next_hop_node_ip)
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
                     add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
                 print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
 
         # Store the current state to state.json file
         write_state_json(nodes, links, node_vs_ip, node_vs_eth)
-<<<<<<< HEAD
         return (lab, links, nodes)
         # Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-=======
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
     except Exception as e:
         print(e)
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
     except KeyboardInterrupt:
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
-<<<<<<< HEAD
-=======
-
-if __name__ == "__main__":
-    # parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-al', '--add-link', type=str, required=False, default=None,
-                        help='link info of link to add')
-    parser.add_argument('-rl', '--remove-link', type=str, required=False,
-                        default=None, help='link info of link to remove')
-    parser.add_argument('-c', '--config', type=str, required=False, default='topology_config',
-                        help='config file describing topology to set up '
-                             '(see examples folder for examples)')
-    args = parser.parse_args()
-    # print(args)
-    main(args)
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7

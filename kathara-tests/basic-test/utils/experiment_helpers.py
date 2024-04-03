@@ -21,7 +21,6 @@ def capture_traffic(node_name, interface, duration, filename):
     except subprocess.CalledProcessError as e:
         print(f"Command {e.cmd} returned non-zero exit status: {e.returncode}")
 
-<<<<<<< HEAD
 def iperf3_server(lab, pc, port=5201):
     """ 
     Starts an iperf3 server on specific device pc as Daemon
@@ -36,26 +35,10 @@ def iperf3_server(lab, pc, port=5201):
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
         
 def iperf3_client(lab, pc, server_ip, port=5201):
-=======
-def iperf3_server(lab, pc, port):
-    """ 
-    Starts an iperf3 server on specific device pc as Daemon
-    :param lab (Kathara.model.Lab): Kathara lab scenario
-    :param pc (Kathara.model.Machine): Kathara device to start server on
-    :param port (int): Port for server to listen on
-    :rtype: Generator[Tuple[bytes, bytes]]
-    :return: A generator of tuples containing the stdout and stderr in bytes 
-    """
-    command = f"iperf3 -s -D -p {port} &"
-    return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc.name, command=command, stream=True, wait=True)
-        
-def iperf3_client(lab, pc, server_ip, port):
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
     """ 
     Starts an iperf3 client on specific device pc,
     connecting to server at ip at given port
     :param lab (Kathara.model.Lab): Kathara lab scenario
-<<<<<<< HEAD
     :param pc (string): Kathara device to start client on
     :param server_ip (string): IP address of server
     :param port (int): Port for client to listen connect to
@@ -64,16 +47,6 @@ def iperf3_client(lab, pc, server_ip, port):
     """
     command = f"iperf3 -c {server_ip} -p {port}"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-=======
-    :param pc (Kathara.model.Machine): Kathara device to start client on
-    :param server_ip (string): IP address of server
-    :param port (int): Port for client to listen connect to
-    :rtype: Generator[Tuple[bytes, bytes]]
-    :return: A generator of tuples containing the stdout and stderr in bytes 
-    """
-    command = f"iperf3 -c {server_ip} -p {port}"
-    return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc.name, command=command, stream=False, wait=True)
->>>>>>> 9d77c960f09c1c8f16e49614660907df1fa1b5b7
 
 def parse_iperf3_bandwidth(stdout):
     """

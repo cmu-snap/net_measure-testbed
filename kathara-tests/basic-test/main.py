@@ -16,17 +16,15 @@ def main():
         print(nodes)
         for node in nodes:
             (stdout, stderr, retcode) = iperf3_server(lab, node)
-            print(stdout, stderr, retcode)
 
         # run iperf between every pair of nodes
         results = {}
         for dest, (ip, _) in nodes.items():
             for source in nodes:
-                if(source != dest):
+                if(source != dest and source[0] != 'r' and dest[0] != 'r' ):
                     (stdout, stderr, retcode) = iperf3_client(lab, dest, ip)
                     if(retcode == 0):
                         results[(source,dest)] = parse_iperf3_bandwidth(stdout)
-                        print()
                     else:
                         results[(source, dest)] = stderr
         print(results)

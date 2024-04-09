@@ -85,28 +85,85 @@ def create_device(lab, device_name, image, links, cmds):
     device = setup_device(lab, device_name, image, links, cmds)
     print(f'Succesfully added device {device_name}')
 
-def remove_link(lab, link):
+def add_link(lab, link_info):
     """
-    Remove link from lab
+    Create a new link given info
     :param lab (Kathara.model.Lab): Kathara lab scenario
-    :param link (string): name of link (i.e. Kathara collision domain)
+    :param link_info: ((source, source_ip), (dest, dest_ip), (bandwdith, burst, latency))
     :return: None
     """
-    link = lab.get_link(link)
-    Kathara.get_instance().undeploy_link(link)
+    print(f"Adding link {link_info}")
 
-def remove_device(lab, device_name):
-    """
-    Remove device from lab
-    :param lab (Kathara.model.Lab): Kathara lab scenario
+    state = read_state_json()
 
-    :param device_name (string): name of device
-    :return: None
-    """
-    device = lab.get_machine(device_name)
+    link_name, node_vs_eth, link_param = generate_link_param(state['node_vs_eth'], link_info)
+    state["links"][link_name] = link_param
+    links = state["links"]
+    nodes = state["nodes"]
+    node_vs_ip = state["node_vs_ip"]
+    endpoints = link_param[1]
+    tc_params = link_param[2]
+    source, dest = endpoints[0][0], endpoints[1][0]
+
+    lab.connect_machine_to_link(source, link_name)
+    lab.connect_machine_to_link(dest, link_name)
     
-    Kathara.get_instance().undeploy_machine(device)
+    # add ips to node
+    if(node_vs_ip[source].count(link_param[1][0][1]) == 0):
+        node_vs_ip[source].append(link_param[1][0][1])
+    if(node_vs_ip[dest].count(link_param[1][1][1]) == 0):
+        node_vs_ip[dest].append(link_param[1][1][1])
 
+
+    # set ip addresses for interfaces
+    cmd_source = f'ip address add {link_param[1][0][1]}/24 dev {link_param[1][0][2]}'
+    cmd_dest = f'ip address add {link_param[1][1][1]}/24 dev {link_param[1][1][2]}'
+    Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=source, command=cmd_source, stream=False, wait=True)
+    Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=dest, command=cmd_dest, stream=False, wait=True)
+
+    configure_link(lab, source, link_param[1][0][2], tc_params)
+    configure_link(lab, dest, link_param[1][1][2], tc_params)
+    # save the updated state
+    write_state_json(lab, nodes, links, node_vs_ip, node_vs_eth)
+
+    # Kathara.get_instance().update_lab_from_api(state['lab_hash'])
+
+def remove_link(lab, link_info):
+    """
+    Remove link specified in info from lab
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :param link_info: ((source, source_ip), (dest, dest_ip), (bandwdith, burst, latency))
+    :return: None
+    """
+    print(f"Removing link {link_info}")
+    current_state = read_state_json()
+
+    node_vs_eth_not_used = {}
+    link_name, node_vs_eth_not_used, link_param = generate_link_param(node_vs_eth_not_used, link_info)
+    node_vs_eth = current_state["node_vs_eth"]
+
+    endpoints = link_param[1]
+    if link_name in current_state["links"]:
+        start_node = endpoints[0][0]
+        dest_node = endpoints[1][0]
+        # deleting direct connections due to this link in routing tables
+        for dest_node_ip in current_state["node_vs_ip"][dest_node]:
+            del_route(lab, start_node, dest_node_ip)
+        # because bidirectional
+        for start_node_ip in current_state["node_vs_ip"][start_node]:
+            del_route(lab, dest_node, start_node_ip)
+        # deleting from links data structure
+        del current_state["links"][link_name]
+
+        write_state_json(lab, current_state['nodes'], current_state['links'], current_state['node_vs_ip'], node_vs_eth)
+
+        # shutdown link
+        link = lab.get_link(link_name)
+        Kathara.get_instance().undeploy_link(link)
+    else:
+        print("Link being deleted not present.")
+        return 
+    
 
 def add_route(lab, device_name, ip_range, gateway_ip, interface):
     """
@@ -129,7 +186,6 @@ def add_route(lab, device_name, ip_range, gateway_ip, interface):
         (stout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
 
 
-
 def del_route(lab, machine_name, ip_range):
     """
     Deleting routing rule corresponding to a link
@@ -142,11 +198,11 @@ def del_route(lab, machine_name, ip_range):
     (stdout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=machine_name, command=cmd, stream=False, wait=True)
     
 
-
-def write_state_json(nodes, links, node_vs_ip, node_vs_eth):
+def write_state_json(lab, nodes, links, node_vs_ip, node_vs_eth):
     """
     Reads from the current state (consisting of all the input parameters of this function)
     and stores it in the state.json file
+    :param lab: lab scenario
     :param nodes: node information in the format as defined in json file.
     :param links: link information in the format as defined in json file.
     :param node_vs_ip: list of ips associated with the nodes
@@ -154,7 +210,7 @@ def write_state_json(nodes, links, node_vs_ip, node_vs_eth):
     :return: the current state of the graph in dictionary format
     """
     with open("./tmp/state.json", "w") as f:
-        json.dump({"nodes": nodes, "links": links, "node_vs_ip": node_vs_ip, "node_vs_eth": node_vs_eth}, f, indent=4)
+        json.dump({"lab_hash": lab.hash, "nodes": nodes, "links": links, "node_vs_ip": node_vs_ip, "node_vs_eth": node_vs_eth}, f, indent=4)
 
 
 def read_state_json():
@@ -225,7 +281,70 @@ def configure_link(lab, node, interface, tc_params):
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
     print(f'Completed configuring node {node}')
 
-def setup_topology():
+def update_tables(lab):
+    current_state = read_state_json()
+    links = current_state['links']
+    
+    node_vs_ip = current_state['node_vs_ip']
+    nodes = current_state['nodes']
+    node_vs_eth = current_state['node_vs_eth']
+    # Using Dijkstra to configure routing tables with add route function above
+    graph = {}
+    connections = {}
+    # Create Graph
+    for link_name, link_param in links.items():
+        endpoints = link_param[1]
+        tc_params = link_param[2]
+
+        if endpoints[0][0] not in node_vs_ip:
+            node_vs_ip[endpoints[0][0]] = []
+        node_vs_ip[endpoints[0][0]].append(endpoints[0][1])
+        if endpoints[1][0] not in node_vs_ip:
+            node_vs_ip[endpoints[1][0]] = []
+        node_vs_ip[endpoints[1][0]].append(endpoints[1][1])
+
+        if endpoints[0][0] not in graph:
+            graph[endpoints[0][0]] = []
+            connections[endpoints[0][0]] = {}
+        graph[endpoints[0][0]].append((endpoints[1][0], tc_params))
+        connections[endpoints[0][0]][endpoints[1][0]] = (
+            endpoints[1][1], endpoints[0][2])  # ip of other node,eth of itself
+        if endpoints[1][0] not in graph:
+            graph[endpoints[1][0]] = []
+            connections[endpoints[1][0]] = {}
+        graph[endpoints[1][0]].append((endpoints[0][0], tc_params))
+        connections[endpoints[1][0]][endpoints[0][0]] = (endpoints[0][1], endpoints[1][2])
+
+    for start_node in graph:
+        dist = dijkstra(graph, start_node)
+        hops = []
+        for node in graph:
+            if node == start_node:
+                continue
+            prev_node = dist[node][1]
+            next_hop = node
+            while prev_node != start_node and dist[prev_node][0] != float('inf'):
+                next_hop = prev_node
+                prev_node = dist[prev_node][1]
+            if dist[prev_node][0] == float('inf'):
+                continue
+            hops.append((node, next_hop))
+        print(f"\nStart Node = {start_node}")
+        for dest_node, next_hop_node in hops:
+            next_hop_node_ip = connections[start_node][next_hop_node][0]
+            interface = connections[start_node][next_hop_node][1]
+            for dest_node_ip in node_vs_ip[dest_node]:
+                add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
+            print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
+
+    for k, v in node_vs_ip.items():
+        node_vs_ip[k] = list(set(v))
+
+    # Store the current state to state.json file
+    write_state_json(lab, nodes, links, node_vs_ip, node_vs_eth)
+
+
+def setup_topology(args):
     """
     Sets up configured topology as described in topology_config
     :rtype: (Kathara.model.lab, dict[link] -> tuple[subnet ip, tuple[link params]], dict[node] -> tuple[ip, base_link])
@@ -233,9 +352,9 @@ def setup_topology():
     """
     try:
         lab = Lab("basic-test")
-        
+
         # import topology configuration
-        config = importlib.import_module('topology_config')
+        config = importlib.import_module(args.config)
 
         start_up_cmds = defaultdict(list)
         start_up_links = defaultdict(list)
@@ -267,7 +386,6 @@ def setup_topology():
             links[link_name] = link_param
 
         nodes = config.nodes
-        print(links)
 
         # uncomment to rebuild docker image
         # build_image("katharatestimage", ".")
@@ -277,7 +395,6 @@ def setup_topology():
             create_device(lab, node_name, "katharatestimage", start_up_links[node_name], start_up_cmds[node_name])
 
         # deploy Kathara lab scenario
-        # NOTE: Make sure to undeploy lab in test code
         Kathara.get_instance().deploy_lab(lab)
 
         # attach devices to collision domains
@@ -316,7 +433,6 @@ def setup_topology():
             graph[endpoints[1][0]].append((endpoints[0][0], tc_params))
             connections[endpoints[1][0]][endpoints[0][0]] = (endpoints[0][1], endpoints[1][2])
 
-        print("Begin routing procedure\n")
         for start_node in graph:
             dist = dijkstra(graph, start_node)
             hops = []
@@ -339,12 +455,18 @@ def setup_topology():
                     add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
                 print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
 
-        # Store the current state to state.json file
-        write_state_json(nodes, links, node_vs_ip, node_vs_eth)
-        return (lab, links, nodes)
+        write_state_json(lab, nodes, links, node_vs_ip, node_vs_eth)
+
     except Exception as e:
         print(e)
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-    except KeyboardInterrupt:
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+
+if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, required=False, default='topology_config',
+                        help='config file describing topology to set up '
+                                '(see examples folder for examples)')
+    args = parser.parse_args()
+
+    setup_topology(args)
 

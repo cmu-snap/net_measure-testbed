@@ -1,7 +1,6 @@
 """
 Helper functions and utilities useful when setting up an experiment
 """
-import subprocess
 from Kathara.model.Lab import Lab
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Machine import Machine
@@ -31,7 +30,7 @@ def iperf3_server(lab, pc, port=5201):
     :return: (stdout, stderr, return value) 
     """
     
-    command = f"iperf3 -s -D -p {port} &"
+    command = f"iperf3 -s -D -p {port}"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
         
 def iperf3_client(lab, pc, server_ip, port=5201):
@@ -46,8 +45,12 @@ def iperf3_client(lab, pc, server_ip, port=5201):
     :rtype: (bytes, bytes, int)
     :return: (stdout, stderr, return value) 
     """
+    print("iperf3_client called")
     command = f"iperf3 -c {server_ip} -t 0 -p {port} &"
-    return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    result = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    print("iperf3_client end")
+    return result
+
 
 def parse_iperf3_bandwidth(stdout):
     """
@@ -103,3 +106,4 @@ def parse_pathneck_result(pathneck_result):
                 bottleneck_bw = float(line[6])
                 return bottleneck, bottleneck_bw
     return None, None
+

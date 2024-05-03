@@ -25,10 +25,10 @@ bottleneck_router = 'r5'
 iperf_server(bottleneck_link_dest['name'])
 
 # generate background traffic
-iperf_client(contesting_client, bottleneck_link_dest['ip'])
+# iperf_client(contesting_client, bottleneck_link_dest['ip'])
 
 # capture traffic on bottleneck router
-capture_traffic(bottleneck_router, 'eth1', '180', 'traffic-capture')
+# capture_traffic(bottleneck_router, 'eth1', '180', 'traffic-capture')
 
 # run pathneck from client to server
 for i in range(n_iter):

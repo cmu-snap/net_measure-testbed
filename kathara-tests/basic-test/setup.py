@@ -141,6 +141,7 @@ def remove_link(lab, link_info):
     node_vs_eth_not_used = {}
     link_name, node_vs_eth_not_used, link_param = generate_link_param(node_vs_eth_not_used, link_info)
     node_vs_eth = current_state["node_vs_eth"]
+    print(link_name)
 
     endpoints = link_param[1]
     if link_name in current_state["links"]:
@@ -156,7 +157,6 @@ def remove_link(lab, link_info):
         del current_state["links"][link_name]
 
         write_state_json(lab, current_state['nodes'], current_state['links'], current_state['node_vs_ip'], node_vs_eth)
-
         # shutdown link
         link = lab.get_link(link_name)
         Kathara.get_instance().undeploy_link(link)
@@ -177,13 +177,14 @@ def add_route(lab, device_name, ip_range, gateway_ip, interface):
     """
     cmd = f"ip route add {ip_range}" \
           f" via {gateway_ip} dev {interface}"
+    # print(cmd)
     (stout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
-
+    # print((stout, stderr, cmdValue))
     if cmdValue != 0:
         cmd = f"ip route change {ip_range}" \
               f" via {gateway_ip} dev {interface}"
-
         (stout, stderr, cmdValue) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=device_name, command=cmd, stream=False, wait=True)
+
 
 
 def del_route(lab, machine_name, ip_range):
@@ -269,24 +270,28 @@ def configure_link(lab, node, interface, tc_params):
 
     (stdout1, stderr1, cmd_value_bandwidth) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_bandwidth, stream=False, wait=True)
     (stdout2, stderr2, cmd_value_latency) = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
-
     # Error handling for cmd_bandwidth and cmd_latency
     if cmd_value_bandwidth != 0 or cmd_value_latency != 0:
         clear_child = f"tc qdisc del dev {interface} parent 1:1 handle 10"
         clear_cmd = f"tc qdisc del dev {interface} root"
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=clear_child, stream=False, wait=True)
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=clear_cmd, stream=False, wait=True)
-        
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_bandwidth, stream=False, wait=True)
         Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node, command=cmd_latency, stream=False, wait=True)
     print(f'Completed configuring node {node}')
 
 def update_tables(lab):
+    """
+    Update/reroute sequence after a change in the topology
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :return: None
+    """
     current_state = read_state_json()
     links = current_state['links']
     
     node_vs_ip = current_state['node_vs_ip']
     nodes = current_state['nodes']
+    print(nodes)
     node_vs_eth = current_state['node_vs_eth']
     # Using Dijkstra to configure routing tables with add route function above
     graph = {}
@@ -347,8 +352,7 @@ def update_tables(lab):
 def setup_topology(args):
     """
     Sets up configured topology as described in topology_config
-    :rtype: (Kathara.model.lab, dict[link] -> tuple[subnet ip, tuple[link params]], dict[node] -> tuple[ip, base_link])
-    :return: (Lab scenario, link information, node dictionary)
+    :return: none
     """
     try:
         lab = Lab("basic-test")
@@ -371,9 +375,7 @@ def setup_topology(args):
         links = {}
         for link_info in config.links:
             link_name, node_vs_eth, link_param = generate_link_param(node_vs_eth, link_info)
-
             source, dest = link_param[1][0][0], link_param[1][1][0]
-
             # set ip addresses for interfaces
             cmd_source = f'ip address add {link_param[1][0][1]}/24 dev {link_param[1][0][2]}'
             cmd_dest = f'ip address add {link_param[1][1][1]}/24 dev {link_param[1][1][2]}'
@@ -400,6 +402,7 @@ def setup_topology(args):
         # attach devices to collision domains
         for link_name, link_param in links.items():
             endpoints = link_param[1]
+            print(endpoints)
             tc_params = link_param[2]
             try:
                 configure_link(lab, endpoints[0][0], endpoints[0][2], tc_params)
@@ -454,7 +457,8 @@ def setup_topology(args):
                 for dest_node_ip in node_vs_ip[dest_node]:
                     add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
                 print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
-
+                
+        # write and save current topology to json file
         write_state_json(lab, nodes, links, node_vs_ip, node_vs_eth)
 
     except Exception as e:

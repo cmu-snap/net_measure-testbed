@@ -15,7 +15,7 @@ def capture_traffic(lab, node_name, interface, duration, filename):
     :param filename: file to write output to
     :return: None
     """
-    command = f'touch {filename}.txt; timeout {duration} -i {interface} > {filename}.txt &'
+    command = f'timeout {duration} -i {interface} > {filename}.txt &'
     stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=node_name, command=command, stream=False, wait=True)
     if retcode != 0:
         print(stderr)
@@ -30,8 +30,18 @@ def iperf3_server(lab, pc, port=5201):
     :return: (stdout, stderr, return value) 
     """
     
-    command = f"iperf3 -s -D -p {port}"
+    command = f"iperf3 -s -D -p {port} &"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+def close_iperf3_server(lab, pc, port=5201):
+    """ 
+    Shuts down an iperf3 server on specific device pc
+    :param lab (Kathara.model.Lab): Kathara lab scenario
+    :param pc (string): Kathara device to end server
+    :param port (int): Listening port 
+    """
+    print(f"Shutting down iperf3 server on {pc}")
+    command = f"pkill iperf3"
+    print(Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True))
         
 def iperf3_client(lab, pc, server_ip, port=5201):
     """ 
@@ -45,10 +55,8 @@ def iperf3_client(lab, pc, server_ip, port=5201):
     :rtype: (bytes, bytes, int)
     :return: (stdout, stderr, return value) 
     """
-    print("iperf3_client called")
-    command = f"iperf3 -c {server_ip} -t 0 -p {port} &"
+    command = f"iperf3 -c {server_ip} -t 1 -p {port}"
     result = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-    print("iperf3_client end")
     return result
 
 

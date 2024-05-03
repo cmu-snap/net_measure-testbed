@@ -133,6 +133,7 @@ def add_route(container_name, ip_range, gateway_ip, interface):
 	"""
 	cmd = f"docker exec {container_name} ip route add {ip_range}" \
 	      f" via {gateway_ip} dev {interface}"
+	print(cmd)
 	cmdValue = os.system(cmd)
 	if cmdValue != 0:
 		cmd = f"docker exec {container_name} ip route change {ip_range}" \

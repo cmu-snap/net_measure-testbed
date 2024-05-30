@@ -55,7 +55,8 @@ def main():
             # run pathneck from client to server
             for i in range(n_iter):
                 result = pathneck(lab, client, server['ip'])
-                print(result)
+                print("result:",result)
+                print("end")
                 bottleneck, bottleneck_bw = parse_pathneck_result(result)
                 if bottleneck is not None:
                     bottleneck_bandwidth.append(bottleneck_bw)

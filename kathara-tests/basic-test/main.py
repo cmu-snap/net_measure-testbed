@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from utils.experiment_helpers import iperf3_server, iperf3_client, capture_traffic, pathneck, parse_pathneck_result, parse_iperf3_bandwidth
+from utils.experiment_helpers import iperf3_server, iperf3_client, capture_traffic, pathneck, parse_pathneck_result, parse_iperf3_bandwidth, ptr
 from Kathara.model.Lab import Lab
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Machine import Machine
@@ -54,23 +54,24 @@ def main():
             capture_traffic(lab, bottleneck_router, 'eth1', '180', 'traffic-capture')
             # run pathneck from client to server
             for i in range(n_iter):
-                result = pathneck(lab, client, server['ip'])
+                # result = pathneck(lab, client, server['ip'])
+                result = ptr(lab, client, server['ip'])
                 print("result:",result)
                 print("end")
-                bottleneck, bottleneck_bw = parse_pathneck_result(result)
-                if bottleneck is not None:
-                    bottleneck_bandwidth.append(bottleneck_bw)
-                    data[bottleneck].append(bottleneck_bw)
+                # bottleneck, bottleneck_bw = parse_pathneck_result(result)
+                # if bottleneck is not None:
+                #     bottleneck_bandwidth.append(bottleneck_bw)
+                #     data[bottleneck].append(bottleneck_bw)
 
             # plot bandwidth test results
-            total_data = [data[key] for key in data]
-            sns.stripplot(data=total_data, jitter=True, color='black')
-            sns.boxplot(total_data)
-            plt.xlabel('Hop ID')
-            plt.ylabel('Measured bandwidth ')
-            plt.title(f'Bandwidth [Mbits/sec] distributions of detected bottlenecks')
-            plt.savefig('pathneck-boxplot')
-            plt.show()
+            # total_data = [data[key] for key in data]
+            # sns.stripplot(data=total_data, jitter=True, color='black')
+            # sns.boxplot(total_data)
+            # plt.xlabel('Hop ID')
+            # plt.ylabel('Measured bandwidth ')
+            # plt.title(f'Bandwidth [Mbits/sec] distributions of detected bottlenecks')
+            # plt.savefig('pathneck-boxplot')
+            # plt.show()
 
             Kathara.get_instance().undeploy_lab(lab_name=lab.name)
     except Exception as e:

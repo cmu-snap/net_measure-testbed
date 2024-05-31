@@ -72,6 +72,10 @@ def parse_iperf3_bandwidth(stdout):
     
     return bandwidth
 
+def ptr(lab, client_name, server_ip):
+    command = f'./igi-ptr-2.1/ptr-client -v {server_ip}'
+    stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=client_name, command=command, stream=False, wait=True)
+    return stdout.decode('utf-8')
 
 def pathneck(lab, client_name, server_ip):
     """

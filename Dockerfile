@@ -21,5 +21,11 @@ RUN wget http://www.cs.cmu.edu/~hnn/pathneck/pathneck-1.3.tgz && \
     cd pathneck-1.3 && \
     make
 
+# Install Pathneck
+RUN wget https://www.cs.cmu.edu/~hnn/igi/igi-ptr-2.1/igi-ptr-2.1.tgz && \
+    tar -xf igi-ptr-2.1.tgz && \
+    cd igi-ptr-2.1 && \
+    make
+
 # Start a shell and keep the container running
 CMD ["tail", "-f", "/dev/null"]

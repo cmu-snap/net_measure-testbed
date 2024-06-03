@@ -55,9 +55,8 @@ def main():
             return
         else:
             # capture traffic on bottleneck router
-            print("ptr_client...")
             # result = ptr_client(lab, 'c1', server['ip'])
-            result = ptr_client(lab, 'c1', "10.0.1.4") #c1
+            result = ptr_client(lab, 'c1', "10.0.0.0") #c1
             # result = iperf3_client(lab, 'c1', "10.0.1.4")
             print("result:",result)
             print("end")

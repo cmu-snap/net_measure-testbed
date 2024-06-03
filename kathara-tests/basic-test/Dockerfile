@@ -148,16 +148,16 @@ RUN apt-get update && \
 
 
 # Install Pathneck
-RUN wget http://www.cs.cmu.edu/~hnn/pathneck/pathneck-1.3.tgz && \
-    tar -xf pathneck-1.3.tgz && \
-    cd pathneck-1.3 && \
-    make
+# RUN wget http://www.cs.cmu.edu/~hnn/pathneck/pathneck-1.3.tgz && \
+#     tar -xf pathneck-1.3.tgz && \
+#     cd pathneck-1.3 && \
+#     make
 
 #Install PTR
-# RUN wget http://www.cs.cmu.edu/%7Ehnn/igi/igi-ptr-2.1.tgz && \
-#     tar -xf igi-ptr-2.1.tgz && \
-#     cd igi-ptr-2.1 && \
-#     make
+RUN wget http://www.cs.cmu.edu/%7Ehnn/igi/igi-ptr-2.1.tgz && \
+    tar -xf igi-ptr-2.1.tgz && \
+    cd igi-ptr-2.1 && \
+    make
 
 COPY .bashrc /root/.bashrc
 COPY .tmux.conf /root/.tmux.conf

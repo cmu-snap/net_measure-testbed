@@ -154,11 +154,12 @@ RUN apt-get update && \
 #     make
 
 #Install PTR
-# RUN wget http://www.cs.cmu.edu/%7Ehnn/igi/igi-ptr-2.1.tgz && \
+# RUN wget http://www.cs.cmu.edu/~hnn/igi/igi-ptr-2.1.tgz && \
 #     tar -xf igi-ptr-2.1.tgz && \
 #     cd igi-ptr-2.1 && \
 #     make
 #Clone modified PTR
+#call 'docker builder prune' to delete cached repository
 RUN git clone https://github.com/ycjoung0829/igi-ptr-2.1.git && \
     cd igi-ptr-2.1 && \
     make

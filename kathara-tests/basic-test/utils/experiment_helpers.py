@@ -34,11 +34,13 @@ def iperf3_server(lab, pc, port=5201):
     command = f"iperf3 -s -D -p {port} &"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
 
-def ptr_server(lab, pc, port=10241):
+def ptr_server(lab, pc):
     print("starting ptr_server...")
-    command = f"./igi-ptr-2.1/ptr-server -p {port} &"
-    stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-    return stdout.decode('utf-8')
+    command = f"./igi-ptr-2.1/ptr-server -vd"
+    result = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    print(result)
+    return True
+    # return (stdout, stderr, retcode)
         
 def iperf3_client(lab, pc, server_ip, port=5201):
     """ 
@@ -58,9 +60,12 @@ def iperf3_client(lab, pc, server_ip, port=5201):
 
 def ptr_client(lab, pc, server_ip, port=10241):
     print("starting ptr_client...:)")
-    command = f"./igi-ptr-2.1/ptr-client {server_ip} &"
-    stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-    return stdout.decode('utf-8')
+    command = f"./igi-ptr-2.1/ptr-client -n 50 -s 500B -v 10.0.1.4"
+    stdout,stderr,retcode= Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    #print(result)
+    print("stdout:",stdout.decode('utf-8'))
+    print("error:",stderr)
+    return (stdout, stderr, retcode)
 
 def parse_iperf3_bandwidth(stdout):
     """

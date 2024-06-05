@@ -160,10 +160,13 @@ RUN apt-get update && \
 #     make
 #Clone modified PTR
 #call 'docker builder prune' to delete cached repository
-RUN git clone https://github.com/ycjoung0829/igi-ptr-2.1.git && \
-    cd igi-ptr-2.1 && \
-    make
+# RUN git clone https://github.com/ycjoung0829/igi-ptr-2.1.git && \
+#     cd igi-ptr-2.1 && \
+#     make
 
+COPY /igi-ptr-2.1 /igi-ptr-2.1
+RUN cd igi-ptr-2.1 && \
+    make
 COPY .bashrc /root/.bashrc
 COPY .tmux.conf /root/.tmux.conf
 

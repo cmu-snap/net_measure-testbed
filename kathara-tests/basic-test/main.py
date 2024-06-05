@@ -10,6 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import docker
 import time
+import threading 
 
 def main():
 
@@ -44,7 +45,10 @@ def main():
         bottleneck_router = 'r5'
         # iperf3_server(lab, bottleneck_link_dest['name'])
         # iperf3_server(lab, 'r1')
-        ptr_server(lab, 'r1')
+        server = threading.Thread(target = ptr_server, args=(lab, 'r1',))
+        server.start()
+        # time.sleep(5)
+
 
 
         # generate background traffic
@@ -56,9 +60,12 @@ def main():
         else:
             # capture traffic on bottleneck router
             # result = ptr_client(lab, 'c1', server['ip'])
-            result = ptr_client(lab, 'c1', "10.0.1.4") #c1
+            client = threading.Thread(target = ptr_client, args=(lab, 'c1', "10.0.1.4",))
+            client.start()
+            # print("result: ", ptr_client(lab, 'c1', "10.0.1.4")) #c1
             # result = iperf3_client(lab, 'c1', "10.0.1.4")
-            print("result:",result)
+            # print("result:",stdout.decode('utf-8'))
+            # print("error: ", stderr)
             print("end")
             # capture_traffic(lab, bottleneck_router, 'eth1', '180', 'traffic-capture')
             # run pathneck from client to server
@@ -81,12 +88,19 @@ def main():
             # plt.title(f'Bandwidth [Mbits/sec] distributions of detected bottlenecks')
             # plt.savefig('pathneck-boxplot')
             # plt.show()
+            
+            client.join() 
 
             Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+            server.join() 
     except Exception as e:
         print(e)
+        # server.join() 
+        # client.join() 
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
     except KeyboardInterrupt:
+        # server.join() 
+        # client.join() 
         Kathara.get_instance().undeploy_lab(lab_name=lab.name)
 
 main()

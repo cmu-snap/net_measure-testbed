@@ -270,7 +270,7 @@ def setup_topology():
         print(links)
 
         # uncomment to rebuild docker image
-        build_image("katharatestimage", ".")
+        # build_image("katharatestimage", ".")
 
         # create devices
         for node_name, node_param in nodes.items():
@@ -331,13 +331,13 @@ def setup_topology():
                 if dist[prev_node][0] == float('inf'):
                     continue
                 hops.append((node, next_hop))
-            print(f"\nStart Node = {start_node}")
+            # print(f"\nStart Node = {start_node}")
             for dest_node, next_hop_node in hops:
                 next_hop_node_ip = connections[start_node][next_hop_node][0]
                 interface = connections[start_node][next_hop_node][1]
                 for dest_node_ip in node_vs_ip[dest_node]:
                     add_route(lab, start_node, dest_node_ip, next_hop_node_ip, interface)
-                print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
+                # print(f"Destination Node = {dest_node}, Next hop = {next_hop_node}")
 
         # Store the current state to state.json file
         write_state_json(nodes, links, node_vs_ip, node_vs_eth)

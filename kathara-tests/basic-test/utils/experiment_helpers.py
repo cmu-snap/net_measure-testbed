@@ -31,12 +31,12 @@ def iperf3_server(lab, pc, port=5201):
     :return: (stdout, stderr, return value) 
     """
     
-    command = f"iperf3 -s -D -p {port} &"
+    command = f"iperf3 -s -D"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
 
 def ptr_server(lab, pc):
     print("starting ptr_server...")
-    command = f"./igi-ptr-2.1/ptr-server -vd"
+    command = f"./igi-ptr-2.1/ptr-server -v"
     result = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
     print(result)
     return True
@@ -54,18 +54,22 @@ def iperf3_client(lab, pc, server_ip, port=5201):
     :rtype: (bytes, bytes, int)
     :return: (stdout, stderr, return value) 
     """
-    command = f"iperf3 -c {server_ip} -t 0 -p {port} &"
+    command = f"iperf3 -c {server_ip}"
     stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    print(stdout, stderr, retcode)
+    parse_iperf3_bandwidth(stdout)
     return stdout.decode('utf-8')
 
 def ptr_client(lab, pc, server_ip, port=10241):
     print("starting ptr_client...:)")
-    command = f"./igi-ptr-2.1/ptr-client -n 50 -s 500B -v 10.0.1.4"
+    command = f"./igi-ptr-2.1/ptr-client -n 50 -s 500B -v {server_ip}"
     stdout,stderr,retcode= Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-    #print(result)
-    print("stdout:",stdout.decode('utf-8'))
-    print("error:",stderr)
-    return (stdout, stderr, retcode)
+    # print("result:",stdout)
+    # print("stdout:",stdout.decode('utf-8'))
+    # print("error:",stderr)
+    # bandwidth = parse_ptr_result(stdout.decode('utf-8'))
+    # print("bandwidth:",bandwidth)
+    return parse_ptr_result(stdout.decode('utf-8'))
 
 def parse_iperf3_bandwidth(stdout):
     """
@@ -120,3 +124,11 @@ def parse_pathneck_result(pathneck_result):
                 bottleneck_bw = float(line[6])
                 return bottleneck, bottleneck_bw
     return None, None
+
+def parse_ptr_result(ptr_result):
+    for line in ptr_result.splitlines():
+        line = line.split()
+        if "PTR:" in line:
+            if line[2] == "Mpbs":
+                bandwidth = line[1]
+                return bandwidth 

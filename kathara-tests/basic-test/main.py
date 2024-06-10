@@ -84,32 +84,32 @@ def main():
         
         # change link to s1
 
-        link1 = (("r1", "10.0.4.2"), ("s1", "10.0.4.4"), (1, 12500, 10))
-        link2 = (("r1", "10.0.6.2"), ("r2", "10.0.6.4"), (200, 12500, 1))
-        add_link(lab, link1)
-        remove_link(lab, link2)
+        # link1 = (("r1", "10.0.4.2"), ("s1", "10.0.4.4"), (1, 12500, 10))
+        # link2 = (("r1", "10.0.6.2"), ("r2", "10.0.6.4"), (200, 12500, 1))
+        # add_link(lab, link1)
+        # remove_link(lab, link2)
 
-        # reroute
-        update_tables(lab)
-        state = read_state_json()
-        nodes = state['nodes']
+        # # reroute
+        # update_tables(lab)
+        # state = read_state_json()
+        # nodes = state['nodes']
 
-        for node,_ in nodes.items():
-            (stdout, stderr, retcode) = iperf3_server(lab, node)
+        # for node,_ in nodes.items():
+        #     (stdout, stderr, retcode) = iperf3_server(lab, node)
 
-        results = {}
-        for dest, (ip, _) in nodes.items():
-            for source, (_, _) in nodes.items():
-                if(source != dest and source[0] != 'r' and dest[0] != 'r' ):
-                    (stdout, stderr, retcode) = iperf3_client(lab, source, ip)
-                    if(retcode == 0):
-                        results[(source,dest)] = parse_iperf3_bandwidth(stdout)
-                    else:
-                        results[(source, dest)] = stderr
-        print(*(results.items()), sep='\n')
+        # results = {}
+        # for dest, (ip, _) in nodes.items():
+        #     for source, (_, _) in nodes.items():
+        #         if(source != dest and source[0] != 'r' and dest[0] != 'r' ):
+        #             (stdout, stderr, retcode) = iperf3_client(lab, source, ip)
+        #             if(retcode == 0):
+        #                 results[(source,dest)] = parse_iperf3_bandwidth(stdout)
+        #             else:
+        #                 results[(source, dest)] = stderr
+        # print(*(results.items()), sep='\n')
 
-        for node,_ in nodes.items():
-            (stdout, stderr, retcode) = close_iperf3_server(lab, node)
+        # for node,_ in nodes.items():
+        #     (stdout, stderr, retcode) = close_iperf3_server(lab, node)
         
         # global variables
         # n_iter = 20

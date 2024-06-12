@@ -17,8 +17,9 @@ def main():
     try:
         lab, links, nodes = setup_topology()
 
+
         # global variables
-        n_iter = 20
+        n_iter = 5
         bottleneck_bandwidth = []
         data = {'00': [], '01': [], '02': [], '03': [], '04': [], '05': []}
 
@@ -29,19 +30,21 @@ def main():
         bottleneck_router = 'r5'
         # iperf3_server(lab, bottleneck_link_dest['name'])
         # iperf3_server(lab, server['name'])
-        # server_t = threading.Thread(target = ptr_server, args=(lab, 's1',))
-        # server_t.start()
+        print("start the server now")
+        server_t = threading.Thread(target = ptr_server, args=(lab, 's1',))
+        server_t.start()
 
         
         
         dst_addr = server['ip']
         data = [] 
-        # for _ in range(n_iter):
-        #     result = ptr_client(lab, 'c1', dst_addr)
-        #     data.append(result)
+        for _ in range(n_iter):
+            result = ptr_client(lab, 'c1', dst_addr)
+            data.append(result)
+            print(result)
         # result = ptr_client(lab, 'c1', dst_addr)
         # print(result)
-        # print(data)
+        print(data)
         # iperf3_client(lab, contesting_client, bottleneck_link_dest['ip']) #c2->r6
         # iperf3_client(lab, client, server['ip']) #c1->s1
         # print("iperf3 client:",result)
@@ -49,7 +52,6 @@ def main():
         print("end")
         # print("iperf3 result:", result)
         
-        # client.join() 
         # Kathara.get_instance().undeploy_lab(lab_name=lab.name)
         # server_t.join() 
     except Exception as e:

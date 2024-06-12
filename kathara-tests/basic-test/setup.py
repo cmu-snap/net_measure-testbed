@@ -239,13 +239,11 @@ def setup_topology():
 
         start_up_cmds = defaultdict(list)
         start_up_links = defaultdict(list)
-        node_vs_ip = {}
+        node_vs_ip = defaultdict(list)
         node_vs_eth = {}
 
         # assign nodes to ip addresses
         for node_name, node_param in config.nodes.items():
-            if node_name not in node_vs_ip:
-                node_vs_ip[node_name] = []
             node_vs_ip[node_name].append(node_param[0])
 
         # update links to include interface and link_name

@@ -54,10 +54,11 @@ def iperf3_client(lab, pc, server_ip, port=5201):
     :rtype: (bytes, bytes, int)
     :return: (stdout, stderr, return value) 
     """
-    command = f"iperf3 -c {server_ip}"
+    command = f"iperf3 -c {server_ip} -t 0"
     stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
-    print(stdout, stderr, retcode)
-    parse_iperf3_bandwidth(stdout)
+    # print(stdout, stderr, retcode)
+    # parse_iperf3_bandwidth(stdout)
+    # return stdout.decode('utf-8')
     return stdout.decode('utf-8')
 
 def ptr_client(lab, pc, server_ip, port=10241):
@@ -69,7 +70,8 @@ def ptr_client(lab, pc, server_ip, port=10241):
     # print("error:",stderr)
     # bandwidth = parse_ptr_result(stdout.decode('utf-8'))
     # print("bandwidth:",bandwidth)
-    return parse_ptr_result(stdout.decode('utf-8'))
+    return stdout.decode('utf-8')
+    # return parse_ptr_result(stdout.decode('utf-8'))
 
 def parse_iperf3_bandwidth(stdout):
     """

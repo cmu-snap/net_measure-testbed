@@ -270,7 +270,7 @@ def setup_topology():
         print(links)
 
         # uncomment to rebuild docker image
-        # build_image("katharatestimage", ".")
+        build_image("katharatestimage", ".")
 
         # create devices
         for node_name, node_param in nodes.items():

@@ -17,22 +17,6 @@ def main():
     try:
         lab, links, nodes = setup_topology()
 
-        # print(nodes)
-        # for node in nodes:
-        #     (stdout, stderr, retcode) = iperf3_server(lab, node)
-
-        # run iperf between every pair of nodes
-        # results = {}
-        # for dest, (ip, _) in nodes.items():
-        #     for source in nodes:
-        #         if(source != dest and source[0] != 'r' and dest[0] != 'r' ):
-        #             (stdout, stderr, retcode) = iperf3_client(lab, dest, ip)
-        #             if(retcode == 0):
-        #                 results[(source,dest)] = parse_iperf3_bandwidth(stdout)
-        #             else:
-        #                 results[(source, dest)] = stderr
-        # print(results)
-        # setup iperf server on bottleneck link destination
         # global variables
         n_iter = 20
         bottleneck_bandwidth = []
@@ -43,54 +27,31 @@ def main():
         client = 'c1'
         bottleneck_link_dest = {'name': 'r6', 'ip': '10.0.8.4'}
         bottleneck_router = 'r5'
-        # iperf3_server(lab, 'r1')
-        server = threading.Thread(target = ptr_server, args=(lab, 'r1',))
-        server.start()
+        # iperf3_server(lab, bottleneck_link_dest['name'])
+        # iperf3_server(lab, server['name'])
+        # server_t = threading.Thread(target = ptr_server, args=(lab, 's1',))
+        # server_t.start()
 
-        # generate background traffic
-        pid = os.fork()
-        if pid == 0:
-            # ptr_client(lab, 'c1', 'r2')
-            return
-        else:
-            
-            dst_addr = "10.0.1.4"
-            data = [] 
-            for _ in range(n_iter):
-                result = ptr_client(lab, 'c1', dst_addr)
-                data.append(result)
-            print(data)
-            # result = iperf3_client(lab, 'c1', dst_addr)
-            # print("iperf3 client:",result)
-            # print("error: ", stderr)
-            print("end")
-            # result = iperf3_client(lab, 'c1', '10.0.2.4')
-            # print("iperf3 result:", result)
-            # capture_traffic(lab, bottleneck_router, 'eth1', '180', 'traffic-capture')
-            # run pathneck from client to server
-            # for i in range(n_iter):
-            #     result = pathneck(lab, client, server['ip'])
-            #     # result = ptr(lab, client, server['ip'])
-            #     print("result:",result)
-            #     print("end")
-            #     bottleneck, bottleneck_bw = parse_pathneck_result(result)
-            #     if bottleneck is not None:
-            #         bottleneck_bandwidth.append(bottleneck_bw)
-            #         data[bottleneck].append(bottleneck_bw)
-
-            # # plot bandwidth test results
-            # total_data = [data[key] for key in data]
-            # sns.stripplot(data=total_data, jitter=True, color='black')
-            # sns.boxplot(total_data)
-            # plt.xlabel('Hop ID')
-            # plt.ylabel('Measured bandwidth ')
-            # plt.title(f'Bandwidth [Mbits/sec] distributions of detected bottlenecks')
-            # plt.savefig('pathneck-boxplot')
-            # plt.show()
-            
-            # client.join() 
-            Kathara.get_instance().undeploy_lab(lab_name=lab.name)
-            server.join() 
+        
+        
+        dst_addr = server['ip']
+        data = [] 
+        # for _ in range(n_iter):
+        #     result = ptr_client(lab, 'c1', dst_addr)
+        #     data.append(result)
+        # result = ptr_client(lab, 'c1', dst_addr)
+        # print(result)
+        # print(data)
+        # iperf3_client(lab, contesting_client, bottleneck_link_dest['ip']) #c2->r6
+        # iperf3_client(lab, client, server['ip']) #c1->s1
+        # print("iperf3 client:",result)
+        # print("error: ", stderr)
+        print("end")
+        # print("iperf3 result:", result)
+        
+        # client.join() 
+        # Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+        # server_t.join() 
     except Exception as e:
         print(e)
         # server.join() 

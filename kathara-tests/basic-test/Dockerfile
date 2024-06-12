@@ -3,6 +3,7 @@ FROM ubuntu:latest
 # Update the package list and install the necessary packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    tshark \ 
     iproute2 \
     iputils-ping \
     traceroute \

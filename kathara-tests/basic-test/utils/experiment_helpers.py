@@ -34,9 +34,9 @@ def iperf3_server(lab, pc, port=5201):
     command = f"iperf3 -s -D"
     return Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
 
-def ptr_server(lab, pc):
+def ptr_server(lab, pc, iteration=5):
     print("starting ptr_server...")
-    command = f"./igi-ptr-2.1/ptr-server -q 5 -v"
+    command = f"./igi-ptr-2.1/ptr-server -q {iteration} -v"
     result = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
     print(result)
     return True

@@ -11,15 +11,18 @@ import matplotlib.pyplot as plt
 import docker
 import time
 import threading 
+import json 
 
 def main():
 
     try:
         lab, links, nodes = setup_topology()
+        with open("./tmp/lab_detail.json", "w") as f:
+            json.dump({"lab_name": lab.name, "lab_hash": lab.hash}, f)
 
 
         # global variables
-        n_iter = 20
+        n_iter = 1
         bottleneck_bandwidth = []
         data = {'00': [], '01': [], '02': [], '03': [], '04': [], '05': []}
 
@@ -50,7 +53,7 @@ def main():
         server_t.join() 
         print("end")
         
-        Kathara.get_instance().undeploy_lab(lab_name=lab.name)
+        # Kathara.get_instance().undeploy_lab(lab_name=lab.name)
     except Exception as e:
         print(e)
         # server.join() 

@@ -3,6 +3,7 @@ import json
 from Kathara.model.Lab import Lab
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Machine import Machine
+import argparse 
 
 def get_lab():
     with open("./tmp/lab_detail.json", "r") as f:
@@ -15,32 +16,60 @@ def get_lab():
 def get_links_stats(lab, link_name = None):
     return Kathara.get_instance().get_links_stats(lab_hash=lab.hash, link_name = link_name)
 
-def disconnect_machine_from_link(node_name, link_name):
-    return Kathara.get_instance().disconnect_machine_from_link(machine=node_name, link=link_name)
+def connect_machine_to_link(lab, node_name, link_name):
+    machine = lab.get_machine(node_name)
+    link = lab.get_link(link_name)
 
-def main():
+    Kathara.get_instance().connect_machine_to_link(machine=machine, link=link)
+
+def disconnect_machine_from_link(lab, node_name, link_name):
+    machine = lab.get_machine(node_name)
+    link = lab.get_link(link_name)
+
+    Kathara.get_instance().disconnect_machine_from_link(machine=machine, link=link)
+
+def connect_machine_to_link(lab, node_name, link_name):
+    machine = lab.get_machine(node_name)
+    link = lab.get_link(link_name)
+    Kathara.get_instance().connect_machine_to_link(machine=machine, link=link)
+
+def link_nodes(link_name):
+    return link_name.split("-")
+
+def main(args):
     try:
         lab = get_lab() 
-        for stat in get_links_stats(lab, "r6-s1"):
-            print(stat)
-            print("\n\n\n\n\n\n\n")
-            break 
-        print("link=",lab.get_link("r6-s1"))
-        #to undeploy a link, you must undeploy all the devices attached to it 
+        node1, node2 = link_nodes(args.link)[0], link_nodes(args.link)[1]
+        
+        if args.action == "add":
+            connect_machine_to_link(lab=lab, node_name=node1, link_name=args.link)
+            connect_machine_to_link(lab=lab, node_name=node2, link_name=args.link)
+            Kathara.get_instance().deploy_link(args.link)
+            
+        elif args.action == "remove":
+            #check status of the link 
+            for stat in get_links_stats(lab, args.link):
+                print(stat)
+                break 
+            #to undeploy a link, you must undeploy all the devices attached to it 
         #https://github.com/KatharaFramework/Kathara/issues/284
-        print('h')
-        print(Kathara.get_instance(), type(Kathara.get_instance()))
-        Kathara.get_instance().disconnect_machine_from_link(machine="r6", link="r6-s1")
-        # disconnect_machine_from_link("r6", "r6-s1")
-        # disconnect_machine_from_link("s1", "r6-s1")
-        remove_link(lab, "r6-s1")
-        # print(get_links_stats(lab, "r6-s1"))
+            disconnect_machine_from_link(lab=lab, node_name=node1, link_name=args.link)
+            disconnect_machine_from_link(lab=lab, node_name=node2, link_name=args.link)
+            remove_link(lab, args.link)
+        
+        #check status of the link after the action
+        for stat in get_links_stats(lab, args.link):
+            print(stat)
+            break 
 
         
     except Exception as e: 
         print(e)
         return
 
-
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", type=str, default=None)
+    parser.add_argument("link", type=str, default=None)
+    args = parser.parse_args()
+    main(args)

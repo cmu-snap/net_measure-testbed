@@ -69,7 +69,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", type=str, default=None)
-    parser.add_argument("link", type=str, default=None)
+    parser.add_argument("--action", type=str, default=None)
+    parser.add_argument("--link", type=str, default=None)
     args = parser.parse_args()
+    print(args)
     main(args)

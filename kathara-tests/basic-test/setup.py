@@ -93,7 +93,6 @@ def remove_link(lab, link):
     :return: None
     """
     print(type(lab))
-    print("hello")
     link = lab.get_link(link)
     Kathara.get_instance().undeploy_link(link)
 

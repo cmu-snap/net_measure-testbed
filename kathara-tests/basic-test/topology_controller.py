@@ -28,9 +28,8 @@ def disconnect_machine_from_link(lab, node_name, link_name):
 
     Kathara.get_instance().disconnect_machine_from_link(machine=machine, link=link)
 
-def connect_machine_to_link(lab, node_name, link_name):
+def connect_machine_to_link(lab, node_name, link):
     machine = lab.get_machine(node_name)
-    link = lab.get_link(link_name)
     Kathara.get_instance().connect_machine_to_link(machine=machine, link=link)
 
 def link_nodes(link_name):
@@ -42,9 +41,11 @@ def main(args):
         node1, node2 = link_nodes(args.link)[0], link_nodes(args.link)[1]
         
         if args.action == "add":
-            connect_machine_to_link(lab=lab, node_name=node1, link_name=args.link)
-            connect_machine_to_link(lab=lab, node_name=node2, link_name=args.link)
-            Kathara.get_instance().deploy_link(args.link)
+            link = lab.new_link(args.link)
+            connect_machine_to_link(lab=lab, node_name=node1, link = link)
+            connect_machine_to_link(lab=lab, node_name=node2, link = link)
+            Kathara.get_instance().deploy_link(link)
+            print("successfully added the link")
             
         elif args.action == "remove":
             #check status of the link 
@@ -56,10 +57,11 @@ def main(args):
             disconnect_machine_from_link(lab=lab, node_name=node1, link_name=args.link)
             disconnect_machine_from_link(lab=lab, node_name=node2, link_name=args.link)
             remove_link(lab, args.link)
+            print("successfully removed the link")
         
         #check status of the link after the action
         for stat in get_links_stats(lab, args.link):
-            print(stat)
+            print("link status:", stat)
             break 
 
         

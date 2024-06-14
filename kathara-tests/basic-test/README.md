@@ -2,7 +2,7 @@
 
 ## Setting up custom topology 
 
-Run `python3 topology_config.py` to setup the topology and store Kathara lab detail to lab_detail.json file. 
+Run `python3 create_topology.py` to setup the topology and store Kathara lab detail to lab_detail.json file. 
 
 ## Running test file 
 

@@ -35,18 +35,30 @@ def connect_machine_to_link(lab, node_name, link):
 def link_nodes(link_name):
     return link_name.split("-")
 
+def modify_bandwidth(lab, node_name, interface, bandwidth):
+    cmd = f"tc qdisc add dev {interface} root tbf rate \
+        {bandwidth}mbit burst 1500b latency 10ms"
+    
+
+    (stdout, stderr, return_code) = Kathara.get_instance().exec(lab_hash = lab.hash, \
+                                machine_name=node_name, command=cmd, stream=False, wait=True)
+    
+
 def main(args):
     try:
         lab = get_lab() 
-        node1, node2 = link_nodes(args.link)[0], link_nodes(args.link)[1]
+        if args.link:
+            node1, node2 = link_nodes(args.link)[0], link_nodes(args.link)[1]
         
+        # add link to the topology 
         if args.action == "add":
             link = lab.new_link(args.link)
             connect_machine_to_link(lab=lab, node_name=node1, link = link)
             connect_machine_to_link(lab=lab, node_name=node2, link = link)
             Kathara.get_instance().deploy_link(link)
             print("successfully added the link")
-            
+        
+        #remove link from the topology 
         elif args.action == "remove":
             #check status of the link 
             for stat in get_links_stats(lab, args.link):
@@ -58,7 +70,9 @@ def main(args):
             disconnect_machine_from_link(lab=lab, node_name=node2, link_name=args.link)
             remove_link(lab, args.link)
             print("successfully removed the link")
-        
+        elif args.action == "limit":
+            print(args.node, args.bandwidth)
+            # modify_bandwidth(lab, node1, args.node, args.bandwidth)
         #check status of the link after the action
         for stat in get_links_stats(lab, args.link):
             print("link status:", stat)
@@ -73,6 +87,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--action", type=str, default=None)
     parser.add_argument("--link", type=str, default=None)
+    parser.add_argument("--node", type=str, default=None)
+    parser.add_argument("--bandwidth", type=int, default=None)
     args = parser.parse_args()
     print(args)
     main(args)

@@ -8,3 +8,6 @@ def main():
             json.dump({"lab_name": lab.name, "lab_hash": lab.hash}, f)
     except Exception as e:
         print(e)
+
+if __name__ == "__main__":
+    main()

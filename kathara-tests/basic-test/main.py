@@ -12,13 +12,15 @@ import docker
 import time
 import threading 
 import json 
+from topology_controller import get_lab
 
 def main():
 
     try:
-
+        # setup the topology
+        lab = get_lab() 
         # global variables
-        n_iter = 1
+        n_iter = 2
         bottleneck_bandwidth = []
         data = {'00': [], '01': [], '02': [], '03': [], '04': [], '05': []}
 
@@ -31,22 +33,22 @@ def main():
         # iperf3_server(lab, server['name'])
         print("start the server now")
         server_t = threading.Thread(target = ptr_server, args=(lab, 's1', n_iter+1,))
-        server_t.start()
+        # server_t.start()
 
         
         
         dst_addr = server['ip']
         data = [] 
-        for _ in range(n_iter+1):
-            result = ptr_client(lab, 'c1', dst_addr)
-            data.append(parse_ptr_result(result))
+        # for _ in range(n_iter+1):
+        #     result = ptr_client(lab, 'c1', dst_addr)
+        #     data.append(parse_ptr_result(result))
         # result = ptr_client(lab, 'c1', dst_addr)
         # print(result)
-        print(data[:n_iter])
+        # print(data[:n_iter])
         # iperf3_client(lab, contesting_client, bottleneck_link_dest['ip']) #c2->r6
         # iperf3_client(lab, client, server['ip']) #c1->s1
         # print("iperf3 client:",result)
-        server_t.join() 
+        # server_t.join() 
         print("end")
         
         # Kathara.get_instance().undeploy_lab(lab_name=lab.name)

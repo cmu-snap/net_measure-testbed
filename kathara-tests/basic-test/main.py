@@ -25,14 +25,15 @@ def main():
         data = {'00': [], '01': [], '02': [], '03': [], '04': [], '05': []}
 
         server = {'name': 's1', 'ip': '10.0.4.4'}
+        bandwidth_server = {'name': 'r3', 'ip': '10.0.2.4'}
         contesting_client = 'c2'
         client = 'c1'
         bottleneck_link_dest = {'name': 'r6', 'ip': '10.0.8.4'}
         bottleneck_router = 'r5'
         # iperf3_server(lab, bottleneck_link_dest['name'])
-        # iperf3_server(lab, server['name'])
+        iperf3_server(lab, bandwidth_server['name'])
         print("start the server now")
-        server_t = threading.Thread(target = ptr_server, args=(lab, 's1', n_iter+1,))
+        # server_t = threading.Thread(target = ptr_server, args=(lab, 's1', n_iter+1,))
         # server_t.start()
 
         
@@ -46,8 +47,8 @@ def main():
         # print(result)
         # print(data[:n_iter])
         # iperf3_client(lab, contesting_client, bottleneck_link_dest['ip']) #c2->r6
-        # iperf3_client(lab, client, server['ip']) #c1->s1
-        # print("iperf3 client:",result)
+        result = iperf3_client(lab, client, bandwidth_server['ip']) #c1->s1
+        print("iperf3 client:",result)
         # server_t.join() 
         print("end")
         

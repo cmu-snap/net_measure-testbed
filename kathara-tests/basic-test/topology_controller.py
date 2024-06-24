@@ -47,6 +47,7 @@ def modify_bandwidth(lab, node_name, interface, bandwidth):
 def main(args):
     try:
         lab = get_lab() 
+        node1, node2 = None, None 
         if args.link:
             node1, node2 = link_nodes(args.link)[0], link_nodes(args.link)[1]
         
@@ -72,7 +73,7 @@ def main(args):
             print("successfully removed the link")
         elif args.action == "limit":
             print(args.node, args.bandwidth)
-            # modify_bandwidth(lab, node1, args.node, args.bandwidth)
+            modify_bandwidth(lab, node1, args.node, args.bandwidth)
         #check status of the link after the action
         for stat in get_links_stats(lab, args.link):
             print("link status:", stat)

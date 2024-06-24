@@ -54,7 +54,7 @@ def iperf3_client(lab, pc, server_ip, port=5201):
     :rtype: (bytes, bytes, int)
     :return: (stdout, stderr, return value) 
     """
-    command = f"iperf3 -c {server_ip} -t 0"
+    command = f"iperf3 -c {server_ip}"
     stdout, stderr, retcode = Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
     # print(stdout, stderr, retcode)
     # parse_iperf3_bandwidth(stdout)

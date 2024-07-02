@@ -165,16 +165,15 @@ RUN apt-get update && \
 #     cd igi-ptr-2.1 && \
 #     make
 
-COPY /igi-ptr-2.1 /igi-ptr-2.1
-RUN cd igi-ptr-2.1 && \
+COPY /igi-ptr-2.1M /igi-ptr-2.1M
+RUN cd igi-ptr-2.1M && \
     make
 
-# RUN rm -rf igi-ptr-2.1 && \ 
-#     wget https://github.com/cmu-snap/net_measure-testbed/blob/PTR/kathara-tests/basic-test/igi-ptr-2.1.tar.gz && \ 
-#     tar -xf igi-ptr-2.1.tar.gz && \
-#     rm igi-ptr-2.1.tar.gz && \
-#     cd igi-ptr-2.1 && \
-#     make
+RUN wget https://github.com/cmu-snap/net_measure-testbed/raw/PTR/kathara-tests/basic-test/igi-ptr-2.1.tar.gz && \ 
+    tar -xf igi-ptr-2.1.tar.gz && \
+    rm igi-ptr-2.1.tar.gz && \
+    cd igi-ptr-2.1 && \
+    make
 
 COPY .bashrc /root/.bashrc
 COPY .tmux.conf /root/.tmux.conf

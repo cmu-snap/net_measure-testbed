@@ -930,8 +930,8 @@ void n_phase_probing(int n)
 int gap_comp(double dst_gap, double src_gap)
 {
 	double delta = 0.05;
-
-	if (dst_gap < src_gap / (1+delta)) {
+	if (((src_gap_sum - dst_gap_sum)/ dst_gap_sum) < delta) {
+	// if (dst_gap < src_gap / (1+delta)) {
 	    if (verbose) 
 	       	printf("smaller dst_gap, considered to be equal \n");
 	    return 0;
@@ -960,7 +960,8 @@ void fast_probing()
         delay_num /= 2;
 
 	while (1) {
-	    if (gap_comp(tlt_dst_gap, tlt_src_gap) == 0) {
+	    // if (gap_comp(tlt_dst_gap, tlt_src_gap) == 0) {
+		if (1) {
 		if (double_check) {
 		    tlt_dst_gap = pre_gap;
 		    break;

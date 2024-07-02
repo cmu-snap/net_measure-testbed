@@ -36,13 +36,16 @@ def link_nodes(link_name):
     return link_name.split("-")
 
 def modify_bandwidth(lab, node_name, interface, bandwidth):
+    # cmd = f"tc qdisc add dev {interface} root tbf rate \
+    #     {bandwidth}mbit burst 1500b latency 10ms"
     cmd = f"tc qdisc add dev {interface} root tbf rate \
-        {bandwidth}mbit burst 1500b latency 10ms"
+         {bandwidth}mbit burst 2kb latency 10ms"
     
-
+    machine = lab.get_machine(node_name)
+    print(machine)
     (stdout, stderr, return_code) = Kathara.get_instance().exec(lab_hash = lab.hash, \
-                                machine_name=node_name, command=cmd, stream=False, wait=True)
-    
+                                machine_name=machine.name, command=cmd, stream=False, wait=True)
+    print(stdout, stderr, return_code)
 
 def main(args):
     try:
@@ -73,7 +76,7 @@ def main(args):
             print("successfully removed the link")
         elif args.action == "limit":
             print(args.node, args.bandwidth)
-            modify_bandwidth(lab, node1, args.node, args.bandwidth)
+            modify_bandwidth(lab, args.node, "0", args.bandwidth)
         #check status of the link after the action
         for stat in get_links_stats(lab, args.link):
             print("link status:", stat)

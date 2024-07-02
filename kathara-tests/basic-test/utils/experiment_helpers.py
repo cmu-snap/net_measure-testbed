@@ -73,6 +73,17 @@ def ptr_client(lab, pc, server_ip, port=10241):
     return stdout.decode('utf-8')
     # return parse_ptr_result(stdout.decode('utf-8'))
 
+def ptr_clientM(lab, pc, server_ip, port=10241):
+    command = f"./igi-ptr-2.1M/ptr-client -n 50 -s 500B -v {server_ip}"
+    stdout,stderr,retcode= Kathara.get_instance().exec(lab_hash=lab.hash, machine_name=pc, command=command, stream=False, wait=True)
+    # print("result:",stdout)
+    # print("stdout:",stdout.decode('utf-8'))
+    # print("error:",stderr)
+    # bandwidth = parse_ptr_result(stdout.decode('utf-8'))
+    # print("bandwidth:",bandwidth)
+    return stdout.decode('utf-8')
+
+
 def parse_iperf3_bandwidth(stdout):
     """
     Returns bandwidth in Mbits/sec

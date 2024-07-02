@@ -20,7 +20,7 @@ def main():
         # setup the topology
         lab = get_lab() 
         # global variables
-        n_iter = 3
+        n_iter = 20
         bottleneck_bandwidth = []
         data = {'00': [], '01': [], '02': [], '03': [], '04': [], '05': []}
 
@@ -30,30 +30,32 @@ def main():
         client = 'c1'
         bottleneck_link_dest = {'name': 'r6', 'ip': '10.0.8.4'}
         bottleneck_router = 'r5'
-        # iperf3_server(lab, server['name'])
+        iperf3_server(lab, bottleneck_link_dest['name'])
         # iperf3_server(lab, bandwidth_server['name'])
         # print("start the server now")
         server_t = threading.Thread(target = ptr_server, args=(lab, 's1', n_iter+1,))
         server_t.start()
 
         
-        
+        # result = iperf3_client(lab, contesting_client, bottleneck_link_dest['ip']) #c2->r6
+
+        iperf3_t = threading.Thread(target = iperf3_client, args=(lab, contesting_client, bottleneck_link_dest['ip'],))
         dst_addr = server['ip']
-        data = [] 
         data_m = []
         for i in range(n_iter+1):
             result = ptr_clientM(lab, 'c1', dst_addr)
-            print(result)
-            data.append(parse_ptr_result(result))
+            data_m.append(parse_ptr_result(result))
+            print("result w/o termination")
 
         # result = ptr_client(lab, 'c1', dst_addr)
         # print(result)
-        print("termination:",data)
-        # print("without termination:", data_m)
-        # result = iperf3_client(lab, "c1", server['ip']) #c2->r6
+        print("without termination:", data_m[:n_iter])
+        data_m = [float(i) for i in data_m[:n_iter]]
+        print("avg:", sum(data_m)/len(data_m))
+        
         # result = iperf3_client(lab, client, bandwidth_server['ip']) #c1->s1
         # print("iperf3 client:",result)
-        # server_t.join() 
+        server_t.join() 
 
         print("end")
         
